@@ -5,7 +5,7 @@
     <ProjectGuid>{BE5B6D83-21C7-48D0-9219-458314846433}</ProjectGuid>
     <OutputType>Exe</OutputType>
     <NoStandardLibraries>false</NoStandardLibraries>
-    <AssemblyName>ConsoleApplication</AssemblyName>
+    <AssemblyName>Deserialize</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <TargetFrameworkProfile>
     </TargetFrameworkProfile>
@@ -64,6 +64,9 @@
   <PropertyGroup>
     <SignManifests>true</SignManifests>
   </PropertyGroup>
+  <PropertyGroup>
+    <StartupObject>PacketCap.Program</StartupObject>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="Core">
       <HintPath>.\Core.dll</HintPath>
@@ -113,9 +116,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ClassInfoFixed.cs" />
+    <Compile Include="MessagePrinter.cs" />
     <Compile Include="PacketCap.cs" />
-    <Compile Include="SerializeReaderFixed.cs" />
-    <Compile Include="SerializeReaderHelperFixed.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />

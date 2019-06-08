@@ -1,15 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using PcapDotNet.Core;
-using PcapDotNet.Packets;
-using System.Text;
 using System.Net;
 using Devcat.Core.Net.Message;
 using Devcat.Core.Net;
-using ServiceCore;
-using Utility;
 using System.Text.RegularExpressions;
-using System.Reflection;
 
 namespace PacketCap
 {
@@ -55,12 +50,17 @@ namespace PacketCap
                 PcapDotNet.Packets.Packet packet;
                 ICryptoTransform ct = new ServiceCore.CryptoTransformHeroes();
                 byte[] buffer = new byte[66000];
+                byte[] newbuffer = new byte[66000];
                 int bufLen = 0;
-                int decodeOffset = 0;
-
+ 
                 Dictionary<int, String> classNames = new Dictionary<int, String>();
                 Dictionary<int, Guid> getGuid = new Dictionary<int, Guid>();
-                bool haveDicts = false;
+                bool first = true;
+                MessageHandlerFactory mf = new MessageHandlerFactory();
+                MessagePrinter mp = new MessagePrinter();
+                Queue<int> recvSize = new Queue<int>();
+                DateTime last = new DateTime();
+                
                 do
                 {
                     PacketCommunicatorReceiveResult result = communicator.ReceivePacket(out packet);
@@ -72,7 +72,12 @@ namespace PacketCap
                             // Timeout elapsed
                             continue;
                         case PacketCommunicatorReceiveResult.Ok:
-
+                            //clear the buffer if no messages for the last second
+                            DateTime now = new DateTime();
+                            if (now.Subtract(last).TotalSeconds > 1) {
+                                bufLen = 0;
+                                recvSize.Clear();
+                            }
                             uint srcPort = ((uint)packet.Buffer[34] << 8) | (uint)packet.Buffer[35];
                             uint dstPort = ((uint)packet.Buffer[36] << 8) | (uint)packet.Buffer[37];
                             String srcIp = BytesToIpAddr(packet.Buffer, 26);
@@ -93,75 +98,147 @@ namespace PacketCap
                             
                             int dataBytes = packet.Length - dataStart;
                             String timestamp = packet.Timestamp.ToString("yyyy-MM-dd hh:mm:ss.fff");
-
+                            recvSize.Enqueue(dataBytes);
                             Console.WriteLine(timestamp + ": " + src + "->" + dst + " bytes=" + dataBytes);
-
+                            Devcat.Core.Net.Message.Packet p;
+                            ArraySegment<byte> dataSeg;
                             if (dataBytes > 0)
                             {
+                                dataSeg = new ArraySegment<byte>(packet.Buffer, dataStart, dataBytes);
+                                p = new Devcat.Core.Net.Message.Packet(dataSeg);
+                                Console.WriteLine("Decrypting a {0} byte array segment", dataSeg.Count);
+                                long salt = p.InstanceId;
+                                ct.Decrypt(dataSeg, salt);
+                                
                                 Buffer.BlockCopy(packet.Buffer, dataStart, buffer, bufLen, dataBytes);
                                 bufLen += dataBytes;
-
-                                //Console.WriteLine("packet is {0} bytes long", bufLen);
-                            }
-                            if (0 < dataBytes && dataBytes < 1460)
-                            {
-
-                                ArraySegment<byte> dataSeg = new ArraySegment<byte>(buffer, decodeOffset, bufLen - decodeOffset);
-                                Console.WriteLine("Decrypting a {0} byte array segment", dataSeg.Count);
-                                long salt = IPAddress.NetworkToHostOrder(BitConverter.ToInt64(buffer, 0));
-                                ct.Decrypt(dataSeg, salt);
                                 dataSeg = new ArraySegment<byte>(buffer, 0, bufLen);
-                                Devcat.Core.Net.Message.Packet p = new Devcat.Core.Net.Message.Packet(dataSeg)
-                                {
-                                    InstanceId = salt
-                                };
-                                Object obj;
-                                Console.WriteLine(p);
-                                if (p.BodyOffset >= p.Length) {
-                                    Console.WriteLine("this packet is too short body offset={0} length={1}", p.BodyOffset, p.Length);
+                                p = new Devcat.Core.Net.Message.Packet(dataSeg);
+                                
+                                int pLen = 0;
+                                try {
+                                    pLen = p.Length;
+                                    Console.WriteLine("bufLen={0} pLen={1}", bufLen, pLen);
                                 }
-
-                                try
-                                {
-
-                                    SerializeReaderFixed.FromBinary<Object>(p, out obj);
-
-                                    /*if (!haveDicts)
+                                catch(System.Runtime.Serialization.SerializationException e) {
+                                    Console.WriteLine("Bad length {0}", e.Message);
+                                    int firstPLen = recvSize.Dequeue();
+                                    if (bufLen > firstPLen)
                                     {
-                                        String contents = obj.ToString();
-                                        setupDicts(classNames, getGuid, contents);
-                                        haveDicts = true;
-                                        FileLog.Log("objects.log", contents);
-                                    }*/
-                                    
+                                        Buffer.BlockCopy(buffer, firstPLen, newbuffer, 0, bufLen - firstPLen);
+                                        bufLen -= firstPLen;
 
-                                    Console.WriteLine("Found a {0}", obj.GetType().ToString());
-                                    
-                                    
-                                    bufLen = 0;
-                                    decodeOffset = 0;
-                                }
-                                catch (System.InvalidOperationException e)
-                                {
-                                    if (classNames.ContainsKey(p.CategoryId))
-                                    {
-                                        String className = classNames[p.CategoryId];
-                                        Guid guid = getGuid[p.CategoryId];
-                                        Console.WriteLine("Library said {0}, I think its a {1} ({2})", e.Message, className, guid.ToString());
+                                        //swap them so buffer doesn't have a blank space
+                                        byte[] temp = buffer;
+                                        buffer = newbuffer;
+                                        newbuffer = temp;
                                     }
                                     else {
-                                        Console.WriteLine("Library said {0}, idk either", e.Message);
+                                        bufLen = 0;
+                                        recvSize.Clear();
+                                    }
+                                    break;
+                                }
+                                if (pLen == 0) {
+
+                                }
+                                if (pLen > bufLen) {
+                                    Console.WriteLine("Waiting for {0} bytes", pLen-bufLen);
+                                }
+                                if (pLen <= bufLen) {
+                                    Console.WriteLine("Read {0} bytes but need {1} bytes, creating object", bufLen, pLen);
+                                    dataSeg = new ArraySegment<byte>(buffer, 0, pLen);
+                                    p = new Devcat.Core.Net.Message.Packet(dataSeg);
+                                    try
+                                    {
+                                        Console.WriteLine(p);
+                                        if (classNames.ContainsKey(p.CategoryId))
+                                        {
+                                            String className = classNames[p.CategoryId];
+                                            Console.WriteLine("Found a {0}", className);
+                                        }
+                                        if (first)
+                                        {
+                                            first = false;
+                                            Object obj;
+                                            SerializeReader.FromBinary<Object>(p, out obj);
+                                            setupDicts(classNames, getGuid, obj.ToString());
+                                            mf.Handle(p, "hello");
+                                            mp.registerPrinters(mf, getGuid);
+                                        }
+                                        else
+                                        {
+                                            mf.Handle(p, "hello");
+                                        }
+
+                                        Buffer.BlockCopy(buffer, p.Length, newbuffer, 0, bufLen - p.Length);
+                                        bufLen -= p.Length;
+
+                                        //swap them so buffer doesn't have a blank space
+                                        byte[] temp = buffer;
+                                        buffer = newbuffer;
+                                        newbuffer = temp;
+                                        recvSize.Clear();
                                     }
                                     
-                                    decodeOffset = bufLen;
+                                    catch (InvalidOperationException e)
+                                    {
+                                        if (classNames.ContainsKey(p.CategoryId))
+                                        {
+                                            String className = classNames[p.CategoryId];
+                                            Guid guid = getGuid[p.CategoryId];
+                                            Console.WriteLine("Library said {0}, I think its a {1} ({2})", e.Message, className, guid.ToString());
+                                        }
+                                        else
+                                        {
+                                            Console.WriteLine("Library said {0}, idk either", e.Message);
+                                        }
+                                        bufLen = 0;
+                                        recvSize.Clear();
+                                    }
+                                    catch (System.Runtime.Serialization.SerializationException e)
+                                    {
+                                        Console.WriteLine("The packet wasn't ready: {0}", e.Message);
+                                        int firstPLen = recvSize.Dequeue();
+                                        if (bufLen > firstPLen)
+                                        {
+                                            Buffer.BlockCopy(buffer, firstPLen, newbuffer, 0, bufLen - firstPLen);
+                                            bufLen -= firstPLen;
+
+                                            //swap them so buffer doesn't have a blank space
+                                            byte[] temp = buffer;
+                                            buffer = newbuffer;
+                                            newbuffer = temp;
+                                        }
+                                        else
+                                        {
+                                            bufLen = 0;
+                                            recvSize.Clear();
+                                        }
+                                    }
+                                    catch (System.ArgumentOutOfRangeException e)
+                                    {
+                                        Console.WriteLine("The packet was too short: {0}", e.Message);
+                                        bufLen = RemovePacket(recvSize,buffer,newbuffer,bufLen);
+                                    }
+                                    catch (System.ArgumentException e)
+                                    {
+                                        Console.WriteLine("Serializing failed bacause a dict was made with 2 identical keys: {0}", e.Message);
+                                    }
+                                    //copy the rest of the buffer to the other one
+                                    //Buffer.BlockCopy(buffer, pLen, newbuffer, 0, bufLen - pLen);
+                                    //bufLen -= pLen;
+
+                                    //swap them so buffer doesn't have a blank space
+                                    //byte[] temp = buffer;
+                                    //buffer = newbuffer;
+                                    //newbuffer = temp;
                                 }
-                                
                             }
                             if (dataBytes == 0) {
                                 bufLen = 0;
-                                decodeOffset = 0;
+                                recvSize.Clear();
                             }
-
 
                             break;
                         default:
@@ -170,6 +247,27 @@ namespace PacketCap
                 } while (true);
             }
         }
+
+        private static int RemovePacket(Queue<int> recvSize, byte[] buffer, byte[] newbuffer, int bufLen) {
+            int firstPLen = recvSize.Dequeue();
+            if (bufLen > firstPLen)
+            {
+                Buffer.BlockCopy(buffer, firstPLen, newbuffer, 0, bufLen - firstPLen);
+                bufLen -= firstPLen;
+
+                //swap them so buffer doesn't have a blank space
+                byte[] temp = buffer;
+                buffer = newbuffer;
+                newbuffer = temp;
+            }
+            else
+            {
+                bufLen = 0;
+                recvSize.Clear();
+            }
+            return bufLen;
+        }
+
         static String BytesToIpAddr(byte[] p, int offset) {
             byte[] addrBytes = new byte[4]{ p[offset], p[offset+1], p[offset + 2], p[offset + 3] };
             IPAddress addr = new IPAddress(addrBytes);
@@ -189,41 +287,7 @@ namespace PacketCap
                     classNames.Add(categoryId, className);
                     getGuid.Add(categoryId, guid);
                     loaded.Add(String.Format("{0} {1}",className,guid.ToString()), false);
-
-                    
-
                 }
-                /*foreach (Assembly assembly in AppDomain.CurrentDomain.GetAssemblies())
-                {
-                    try
-                    {
-                        foreach (Type type in assembly.GetTypes())
-                        {
-                            if ((!(type.Namespace != "System") || !(type.Namespace != "System.Collections.Generic")) && (type.IsSerializable && !type.IsDefined(typeof(ObsoleteAttribute), false)) && (!type.IsInterface && !type.IsAbstract && (!type.IsArray && type.IsVisible)))
-                            {
-                                loaded.Add(String.Format("{0} {1}", type.FullName, type.GUID.ToString()), true);
-                            }
-                            else if (getGuid.ContainsValue(type.GUID)) {
-                                bool notSys = (!(type.Namespace != "System") || !(type.Namespace != "System.Collections.Generic"));
-                                bool obsolete = type.IsDefined(typeof(ObsoleteAttribute), false);
-                                String typeStatus = String.Format("Type {0}: NameSpace: {1} serializable: {2} ObsoleteAttribute: {3} IsInterface: {4} IsAbstract: {5} IsArray: {6} IsVisible: {7}, NotSys: {8}", type.FullName, type.Namespace, type.IsSerializable, obsolete, type.IsInterface, type.IsAbstract, type.IsArray, type.IsVisible, notSys);
-                                FileLog.Log("typeStatus.log", typeStatus);
-                                Console.WriteLine(typeStatus);
-                            }
-                        }
-                    }
-                    catch (ReflectionTypeLoadException)
-                    {
-                    }
-                }
-                foreach (KeyValuePair<String, bool> entry in loaded) {
-                    if (!entry.Value)
-                    {
-                        String missingStatus = String.Format("Missing {0}", entry.Key);
-                        FileLog.Log("typeStatus.log", missingStatus);
-                        Console.WriteLine(missingStatus);
-                    }
-                }*/
             }
         }
     }
