@@ -1,4 +1,5 @@
 ﻿using Devcat.Core.Net.Message;
+using ServiceCore.CharacterServiceOperations;
 using ServiceCore.EndPointNetwork;
 using ServiceCore.EndPointNetwork.Captcha;
 using ServiceCore.EndPointNetwork.GuildService;
@@ -66,8 +67,38 @@ namespace PacketCap
             this.Register<AddFriendShipResultMessage>(new Action<AddFriendShipResultMessage, object>(PrintAddFriendShipResultMessage));
             this.Register<HousingInvitationRejectMessage>(new Action<HousingInvitationRejectMessage, object>(PrintHousingInvitationRejectMessage));
             this.Register<EnhanceSuccessRatioDebugMessage>(new Action<EnhanceSuccessRatioDebugMessage, object>(PrintEnhanceSuccessRatioDebugMessage));
-            //this.Register<>(new Action<, object>(Print));
-            //this.Register<>(new Action<, object>(Print));
+            this.Register<HasSecondPasswordMessage>(new Action<HasSecondPasswordMessage, object>(PrintHasSecondPasswordMessage));
+            this.Register<GetUserIDMessage>(new Action<GetUserIDMessage, object>(PrintGetUserIDMessage));
+            this.Register<MakeNamedRingMessage>(new Action<MakeNamedRingMessage, object>(PrintMakeNamedRingMessage));
+            this.Register<MarbleInfoResultMessage>(new Action<MarbleInfoResultMessage, object>(PrintMarbleInfoResultMessage));
+            this.Register<RequestPartChangingMessage>(new Action<RequestPartChangingMessage, object>(PrintRequestPartChangingMessage));
+            this.Register<CaptchaResponseResultMessage>(new Action<CaptchaResponseResultMessage, object>(PrintCaptchaResponseResultMessage));
+            this.Register<JoinGuildChatRoomMessage>(new Action<JoinGuildChatRoomMessage, object>(PrintJoinGuildChatRoomMessage));
+            this.Register<HousingListMessage>(new Action<HousingListMessage, object>(PrintHousingListMessage));
+            this.Register<AvatarSynthesisMaterialRecipesMessage>(new Action<AvatarSynthesisMaterialRecipesMessage, object>(PrintAvatarSynthesisMaterialRecipesMessage));
+            this.Register<AvatarSynthesisRequestMessage>(new Action<AvatarSynthesisRequestMessage, object>(PrintAvatarSynthesisRequestMessage));
+            this.Register<GameResourceRespondMessage>(new Action<GameResourceRespondMessage, object>(PrintGameResourceRespondMessage));
+            this.Register<AllUserGoalEventMessage>(new Action<AllUserGoalEventMessage, object>(PrintAllUserGoalEventMessage));
+            this.Register<LeaveHousingMessage>(new Action<LeaveHousingMessage, object>(PrintLeaveHousingMessage));
+            this.Register<DecomposeItemResultMessage>(new Action<DecomposeItemResultMessage, object>(PrintDecomposeItemResultMessage));
+            this.Register<QueryAvatarSynthesisMaterialRecipesMessage>(new Action<QueryAvatarSynthesisMaterialRecipesMessage, object>(PrintQueryAvatarSynthesisMaterialRecipesMessage));
+            this.Register<SearchHousingRoomMessage>(new Action<SearchHousingRoomMessage, object>(PrintSearchHousingRoomMessage));
+            this.Register<MarbleSetTimerMessage>(new Action<MarbleSetTimerMessage, object>(PrintMarbleSetTimerMessage));
+            this.Register<FreeTitleNameCheckResultMessage>(new Action<FreeTitleNameCheckResultMessage, object>(PrintFreeTitleNameCheckResultMessage));
+            this.Register<InsertBlessStoneCompleteMessage>(new Action<InsertBlessStoneCompleteMessage, object>(PrintInsertBlessStoneCompleteMessage));
+            this.Register<EnchantLimitlessMessage>(new Action<EnchantLimitlessMessage, object>(PrintEnchantLimitlessMessage));
+            this.Register<RequestBraceletCombinationMessage>(new Action<RequestBraceletCombinationMessage, object>(PrintRequestBraceletCombinationMessage));
+            this.Register<SwapHousingItemMessage>(new Action<SwapHousingItemMessage, object>(PrintSwapHousingItemMessage));
+            this.Register<MarbleProcessNodeResultMessage>(new Action<MarbleProcessNodeResultMessage, object>(PrintMarbleProcessNodeResultMessage));
+            this.Register<BurnGaugeRequestMessage>(new Action<BurnGaugeRequestMessage, object>(PrintBurnGaugeRequestMessage));
+            this.Register<SetQuoteMessage>(new Action<SetQuoteMessage, object>(PrintSetQuoteMessage));
+            this.Register<RequestAttendanceRewardMessage>(new Action<RequestAttendanceRewardMessage, object>(PrintRequestAttendanceRewardMessage));
+            this.Register<HousingGameHostedMessage>(new Action<HousingGameHostedMessage, object>(PrintHousingGameHostedMessage));
+            this.Register<HousingKickedMessage>(new Action<HousingKickedMessage, object>(PrintHousingKickedMessage));
+            this.Register<RequestAddPeerMessage>(new Action<RequestAddPeerMessage, object>(PrintRequestAddPeerMessage));
+            this.Register<MaxDurabilityRepairItemMessage>(new Action<MaxDurabilityRepairItemMessage, object>(PrintMaxDurabilityRepairItemMessage));
+            this.Register<SecondPasswordResultMessage>(new Action<SecondPasswordResultMessage, object>(PrintSecondPasswordResultMessage));
+            this.Register<CharacterCommonInfoMessage>(new Action<CharacterCommonInfoMessage, object>(PrintCharacterCommonInfoMessage));
             //this.Register<>(new Action<, object>(Print));
             //this.Register<>(new Action<, object>(Print));
             //this.Register<>(new Action<, object>(Print));
@@ -197,30 +228,92 @@ namespace PacketCap
             }
         }
 
+        private static String BaseCharacterToString(BaseCharacter m) {
+            String c = "";
+            switch ((BaseCharacter)m)
+            {
+                case BaseCharacter.Lethita:
+                    c = "Lann";//TODO huh?
+                    break;
+                case BaseCharacter.Fiona:
+                    c = "Fiona";
+                    break;
+                case BaseCharacter.Evy:
+                    c = "Evie";
+                    break;
+                case BaseCharacter.Kalok:
+                    c = "Karok";
+                    break;
+                case BaseCharacter.Kay:
+                    c = "Kai";
+                    break;
+                case BaseCharacter.Vella:
+                    c = "Vella";
+                    break;
+                case BaseCharacter.Hurk:
+                    c = "Hurk";
+                    break;
+                case BaseCharacter.Lynn:
+                    c = "Lynn";
+                    break;
+                case BaseCharacter.Arisha:
+                    c = "Arisha";
+                    break;
+                case BaseCharacter.Hagie:
+                    c = "Sylas";
+                    break;
+                case BaseCharacter.CHARACTER_COUNT:
+                    c = "CHARACTER_COUNT";
+                    break;
+                case BaseCharacter.ALL_CHARACTER:
+                    c = "ALL_CHARACTER";
+                    break;
+            }
+            return c;
+        }
+
+        private static void PrintGameJoinMemberInfo(GameJoinMemberInfo m, int tabs) {
+            String t = new string('\t', tabs);
+
+            Console.WriteLine("{0}Name={1}", t, m.Name);
+            Console.WriteLine("{0}Level={1}", t, m.Level);
+            String c = BaseCharacterToString((BaseCharacter)m.BaseClass);
+
+            Console.WriteLine("{0}Class={1}", t, c);
+            Console.WriteLine("{0}TitleID={1}", t, m.TitleID);//translate using heroes.db3 and translation xml
+            Console.WriteLine("{0}TitleCount={1}", t, m.TitleCount);
+
+            Console.WriteLine("{0}Stats:", t);
+            if (m.Stats != null) {
+                foreach (KeyValuePair<string, int> entry in m.Stats)
+                {
+                    Console.WriteLine("{0}\t{0}={1}", t, entry.Key, entry.Value);
+                }
+            }
+            if (m.CostumeInfo != null) {
+                Console.WriteLine("{0}Height={1}", t, m.CostumeInfo.Height);
+                Console.WriteLine("{0}Bust={1}", t, m.CostumeInfo.Bust);
+            }
+
+            Console.WriteLine("{0}EquippedItems:");
+            if (m.EquippedItems != null) {
+                foreach (KeyValuePair<int, string> entry in m.EquippedItems)
+                {
+                    Console.WriteLine("{0}{1}\t={1}", t, entry.Key, entry.Value);
+                }
+            }
+
+            if (m.Pet != null) {
+                Console.WriteLine("{0}Pet: Name={1}, Type={2}", t, m.Pet.PetName, m.Pet.PetType);
+            }
+            
+            Console.WriteLine("{0}...", t);//much more info if needed
+        }
+
         private static void PrintHousingMemberInfoMessage(HousingMemberInfoMessage msg, object tag) {
             //TODO: connect to database to collect avatar info
             Console.WriteLine("HousingMemberInfoMessage:");
-            GameJoinMemberInfo m = msg.MemberInfo;
-            Console.WriteLine("\tName={0}", m.Name);
-            Console.WriteLine("\tLevel={0}", m.Level);
-            Console.WriteLine("\tClass={0}", m.BaseClass);//not sure how to translate to string, find out manually
-            Console.WriteLine("\tTitleID={0}", m.TitleID);//translate using heroes.db3 and translation xml
-            Console.WriteLine("\tTitleCount={0}", m.TitleCount);
-
-            Console.WriteLine("\tStats:");
-            foreach (KeyValuePair<string, int> entry in m.Stats) {
-                Console.WriteLine("\t\t{0}={1}",entry.Key,entry.Value);
-            }
-            Console.WriteLine("\tHeight={0}", m.CostumeInfo.Height);
-            Console.WriteLine("\tBust={0}", m.CostumeInfo.Bust);
-            
-            Console.WriteLine("\tEquippedItems:");
-            foreach (KeyValuePair<int,string> entry in m.EquippedItems)
-            {
-                Console.WriteLine("\t\t{0}={1}", entry.Key, entry.Value);
-            }
-            Console.WriteLine("\tPet: Name={0}, Type={1}",m.Pet.PetName,m.Pet.PetType);
-            Console.WriteLine("\t...");//much more info if needed
+            PrintGameJoinMemberInfo(msg.MemberInfo,1);
         }
 
         private static void PrintHousingKickMessage(HousingKickMessage msg, object tag) {
@@ -403,6 +496,259 @@ namespace PacketCap
 
         private static void PrintEnhanceSuccessRatioDebugMessage(EnhanceSuccessRatioDebugMessage msg, object tag) {
             Console.WriteLine(msg.ToString());
+        }
+
+        private static void PrintHasSecondPasswordMessage(HasSecondPasswordMessage msg, object tag) {
+            Console.WriteLine(msg.ToString());
+        }
+
+        private static void PrintGetUserIDMessage(GetUserIDMessage msg, object type) {
+            Console.WriteLine("GetUserIDMessage []");
+        }
+
+        private static void PrintMakeNamedRingMessage(MakeNamedRingMessage msg, object type) {
+            Console.WriteLine("MakeNamedRingMessage: ItemID={0} UserName={1}",msg.ItemID,msg.UserName);
+        }
+
+        private static void PrintMarbleInfoResultMessage(MarbleInfoResultMessage msg, object type) {
+            Console.WriteLine("MarbleInfoResultMessage:");
+            Console.WriteLine("\tMarbleID={0}",msg.MarbleID);
+            Console.WriteLine("\tCurrentIndex={0}",msg.CurrentIndex);
+            Console.WriteLine("\tNodeList:");
+            foreach (MarbleNode node in msg.NodeList) {
+                Console.WriteLine("\t\tMarbleNode:");
+                Console.WriteLine("\t\t\tNodeIndex={0}", node.NodeIndex);
+                Console.WriteLine("\t\t\tNodeType={0}", node.NodeType);
+                Console.WriteLine("\t\t\tNodeGrade={0}", node.NodeGrade);
+                Console.WriteLine("\t\t\tArg=[{0}]",String.Join(",",node.Arg));
+                Console.WriteLine("\t\t\tDesc={0}", node.Desc);
+            }
+            Console.WriteLine("\tIsFirst={0}",msg.IsFirst);
+            Console.WriteLine("\tIsProcessed={0}",msg.IsProcessed);
+        }
+
+        private static void PrintRequestPartChangingMessage(RequestPartChangingMessage msg, object type) {
+            Console.WriteLine("RequestPartChangingMessage: combinedEquipItemID={0} targetIndex={1} partID={2}", msg.combinedEquipItemID, msg.targetIndex, msg.partID);
+        }
+
+        private static void PrintCaptchaResponseResultMessage(CaptchaResponseResultMessage msg, object tag) {
+            Console.WriteLine("CaptchaResponseResultMessage: Result=?");
+        }
+
+        private static void PrintJoinGuildChatRoomMessage(JoinGuildChatRoomMessage msg, object tag) {
+            Console.WriteLine(msg.ToString());
+        }
+
+        private static void PrintHousingListMessage(HousingListMessage msg, object tag) {
+            Console.WriteLine("HousingListMessage: HousingList=[{0}]",String.Join(",",msg.HousingList));
+        }
+
+        private static void PrintAvatarSynthesisMaterialRecipesMessage(AvatarSynthesisMaterialRecipesMessage msg, object tag) {
+            Console.WriteLine("AvatarSynthesisMaterialRecipesMessage: MaterialRecipies=[{0}]",String.Join(",",msg.MaterialRecipes));
+        }
+
+        private static void PrintAvatarSynthesisRequestMessage(AvatarSynthesisRequestMessage msg, object tag) {
+            Console.WriteLine(msg.ToString());
+        }
+
+        private static void PrintGameResourceRespondMessage(GameResourceRespondMessage msg, object tag) {
+            Console.WriteLine("GameResourceRespondMessage: ResourceRespond={0}",msg.ResourceRespond);
+        }
+
+        private static void PrintAllUserGoalEventMessage(AllUserGoalEventMessage msg, object tag) {
+            Console.WriteLine("AllUserGoalEventMessage: AllUserGoalInfo:");
+            foreach (KeyValuePair<int, int> goal in msg.AllUserGoalInfo) {
+                Console.WriteLine("\t{0}={1}",goal.Key,goal.Value);
+            }
+        }
+
+        private static void PrintLeaveHousingMessage(LeaveHousingMessage msg, object tag) {
+            Console.WriteLine("LeaveHousingMessage []");
+        }
+
+        private static void PrintDecomposeItemResultMessage(DecomposeItemResultMessage msg, object tag) {
+            
+            String item = "";
+            switch (msg.ResultEXP) {
+                case DecomposeItemResultEXP.fail:
+                    item = "fail";
+                    break;
+                case DecomposeItemResultEXP.increase:
+                    item = "increase";
+                    break;
+                case DecomposeItemResultEXP.not_increase:
+                    item = "not_increase";
+                    break;
+                case DecomposeItemResultEXP.not_increase_already_max:
+                    item = "not_increase_already_max";
+                    break;
+                case DecomposeItemResultEXP.part_extract:
+                    item = "part_extract";
+                    break;
+            }
+            Console.WriteLine("DecomposeItemResultMessage: ResultEXP={0}",item);
+            Console.WriteLine("\tGiveItem:");
+            foreach (string itemclass in msg.GiveItemClassList) {
+                Console.WriteLine("\t\t{0}",itemclass);
+            }
+        }
+
+        private static void PrintQueryAvatarSynthesisMaterialRecipesMessage(QueryAvatarSynthesisMaterialRecipesMessage msg, object tag) {
+            Console.WriteLine("QueryAvatarSynthesisMaterialRecipesMessage: []");
+        }
+
+        private static void PrintSearchHousingRoomMessage(SearchHousingRoomMessage msg, object tag) {
+            Console.WriteLine("SearchHousingRoomMessage: Option={0} Keyword={1}",msg.Option,msg.Keyword);
+        }
+
+        private static void PrintMarbleSetTimerMessage(MarbleSetTimerMessage msg, object tag) {
+            Console.WriteLine("MarbleSetTimerMessage: Time={0}", msg.Time);
+        }
+
+        private static void PrintFreeTitleNameCheckResultMessage(FreeTitleNameCheckResultMessage msg, object tag) {
+            Console.WriteLine("FreeTitleNameCheckResultMessage:");
+            Console.WriteLine("\tItemID={0}",msg.ItemID);
+            Console.WriteLine("\tFreeTitleName={0}",msg.FreeTitleName);
+            Console.WriteLine("\tIsSuccess={0}",msg.IsSuccess);
+            Console.WriteLine("\tHasFreeTitle={0}",msg.HasFreeTitle);
+        }
+
+        private static void PrintInsertBlessStoneCompleteMessage(InsertBlessStoneCompleteMessage msg, object tag) {
+            Console.WriteLine("InsertBlessStoneCompleteMessage:");
+            Console.WriteLine("\tSlot={0}",msg.Slot);
+            Console.WriteLine("\tOwnerList=[{0}]",String.Join(",",msg.OwnerList));
+            StringBuilder sb = new StringBuilder();
+            foreach (BlessStoneType t in msg.TypeList) {
+                switch (t) {
+                    case BlessStoneType.NONE:
+                        sb.Append("NONE");
+                        break;
+                    case BlessStoneType.ALL:
+                        sb.Append("ALL");
+                        break;
+                    case BlessStoneType.EXP:
+                        sb.Append("EXP");
+                        break;
+                    case BlessStoneType.LUCK:
+                        sb.Append("LUCK");
+                        break;
+                    case BlessStoneType.AP:
+                        sb.Append("AP");
+                        break;
+                    case BlessStoneType.StoneTypeCount:
+                        sb.Append("StoneTypeCount");
+                        break;
+                }
+                sb.Append(",");
+            }
+            Console.WriteLine("\tTypeList=[{0}]",sb.ToString());
+        }
+
+        private static void PrintEnchantLimitlessMessage(EnchantLimitlessMessage msg, object tag) {
+            Console.WriteLine(msg.ToString());
+        }
+
+        private static void PrintRequestBraceletCombinationMessage(RequestBraceletCombinationMessage msg, object tag) {
+            Console.WriteLine(msg.ToString());
+        }
+
+        private static void PrintSwapHousingItemMessage(SwapHousingItemMessage msg, object tag) {
+            Console.WriteLine(msg.ToString());
+        }
+
+        private static void PrintMarbleProcessNodeResultMessage(MarbleProcessNodeResultMessage msg, object tag) {
+            Console.WriteLine("MarbleProcessNodeResultMessage: Type={0} IsChance={1}",msg.Type,msg.IsChance);
+        }
+
+        private static void PrintBurnGaugeRequestMessage(BurnGaugeRequestMessage msg, object tag) {
+            Console.WriteLine("BurnGaugeRequestMessage: []");
+        }
+
+        private static void PrintSetQuoteMessage(SetQuoteMessage msg, object tag) {
+            Console.WriteLine(msg.ToString());
+        }
+
+        private static void PrintRequestAttendanceRewardMessage(RequestAttendanceRewardMessage msg, object tag) {
+            Console.WriteLine(msg.ToString());
+        }
+
+        private static void PrintHousingGameHostedMessage(HousingGameHostedMessage msg, object tag) {
+            Console.WriteLine("HousingGameHostedMessage: Map={0} IsOwner={1}",msg.Map,msg.IsOwner);
+            Console.WriteLine("\tHousingProps:");
+            foreach (HousingPropInfo info in msg.HousingProps) {
+                Console.WriteLine("\t\t{0},info.ToString()");
+            }
+            Console.WriteLine("\tHostInfo:");
+            PrintGameJoinMemberInfo(msg.HostInfo, 2);
+        }
+
+        private static void PrintHousingKickedMessage(HousingKickedMessage msg, object tag) {
+            Console.WriteLine("HousingKickedMessage: []");
+        }
+
+        private static void PrintBuyIngameCashshopUseTirMessage(BuyIngameCashshopUseTirMessage msg, object tag) {
+            Console.WriteLine("BuyIngameCashshopUseTirMessage: Products=[{0}]",String.Join(",",msg.Products));
+        }
+
+        private static void PrintRequestAddPeerMessage(RequestAddPeerMessage msg, object tag) {
+            Console.WriteLine(msg.ToString());
+        }
+
+        private static void PrintMaxDurabilityRepairItemMessage(MaxDurabilityRepairItemMessage msg, object tag) {
+            Console.WriteLine(msg.ToString());
+        }
+
+        private static void PrintSecondPasswordResultMessage(SecondPasswordResultMessage msg, object tag) {
+            Console.WriteLine(msg.ToString());
+        }
+
+        private static String VocationToString(VocationEnum v) {
+            String s = "";
+            switch (v) {
+                case VocationEnum.Invalid:
+                    s = "Invalid";
+                    break;
+                case VocationEnum.None:
+                    s = "None";
+                    break;
+                case VocationEnum.Paladin:
+                    s = "Paladin";
+                    break;
+                case VocationEnum.DarkKnight:
+                    s = "DarkKnight";
+                    break;
+            }
+            return s;
+        }
+
+        private static void PrintCharacterCommonInfoMessage(CharacterCommonInfoMessage msg, object tag) {
+            CharacterSummary c = msg.Info;
+            Console.WriteLine("CharacterCommonInfoMessage:");
+            Console.WriteLine("\tCharacterID={0}",c.CharacterID);
+            String basechar = BaseCharacterToString(c.BaseCharacter);
+            Console.WriteLine("\tBaseCharacter={0}",basechar);
+            Console.WriteLine("\tLevel={0}",c.Level);
+            Console.WriteLine("\tTitle={0}",c.Title);
+            Console.WriteLine("\tTitleCount={0}",c.TitleCount);
+            if (c.Costume != null)
+            {
+                Console.WriteLine("\tHeight={1}", c.Costume.Height);
+                Console.WriteLine("\tBust={1}", c.Costume.Bust);
+            }
+
+            Console.WriteLine("\tQuote={0}",c.Quote);
+            Console.WriteLine("\tGuildName={0}",c.GuildName);
+            String v = VocationToString(c.VocationClass);
+            Console.WriteLine("\tVocation={0}",v);
+            if (c.Pet != null)
+            {
+                Console.WriteLine("\tPet: Name={1}, Type={2}", c.Pet.PetName, c.Pet.PetType);
+            }
+            Console.WriteLine("\tFreeTitleName={0}",c.FreeTitleName);
+        }
+
+        private static void PrintChannelServerAddress(ChannelServerAddress msg, object tag) {
+            Console.WriteLine("ChannelServerAddress: ChannelID={0} Address={1} Port={2} Key={3}",msg.ChannelID,msg.Address,msg.Port,msg.Key);
         }
     }
 }
