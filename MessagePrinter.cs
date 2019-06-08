@@ -8,9 +8,7 @@ using ServiceCore.EndPointNetwork.Item;
 using ServiceCore.EndPointNetwork.MicroPlay;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace PacketCap
 {
@@ -121,6 +119,11 @@ namespace PacketCap
             this.Register<NpcListMessage>(new Action<NpcListMessage, object>(PrintNpcListMessage));
             this.Register<TradeSearchResult>(new Action<TradeSearchResult, object>(PrintTradeSearchResult));
             this.Register<InventoryInfoMessage>(new Action<InventoryInfoMessage, object>(PrintInventoryInfoMessage));
+            this.Register<AskSecondPasswordMessage>(new Action<AskSecondPasswordMessage, object>(PrintAskSecondPasswordMessage));
+            this.Register<NoticeGameEnvironmentMessage>(new Action<NoticeGameEnvironmentMessage, object>(PrintNoticeGameEnvironmentMessage));
+            //this.Register<>(new Action<, object>(Print));
+            //this.Register<>(new Action<, object>(Print));
+            //this.Register<>(new Action<, object>(Print));
             //this.Register<>(new Action<, object>(Print));
             //this.Register<>(new Action<, object>(Print));
 
@@ -973,6 +976,14 @@ namespace PacketCap
 
         private static void PrintInventoryInfoMessage(InventoryInfoMessage msg, object tag) {
             //TODO: parse fully
+            Console.WriteLine(msg.ToString());
+        }
+
+        private static void PrintAskSecondPasswordMessage(AskSecondPasswordMessage msg, object tag) {
+            Console.WriteLine(msg.ToString());
+        }
+
+        private static void PrintNoticeGameEnvironmentMessage(NoticeGameEnvironmentMessage msg, object tag) {
             Console.WriteLine(msg.ToString());
         }
     }

@@ -136,7 +136,7 @@ namespace PacketCap
                 int pLen = 0;
                 try
                 {
-                    pLen = p.Length;
+                    pLen = p.Length+p.BodyOffset;
                     if (pLen == 0)
                     {
                         ClearBuffer();
