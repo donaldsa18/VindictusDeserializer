@@ -120,7 +120,7 @@ namespace PacketCap
             this.Register<FriendshipInfoListMessage>(new Action<FriendshipInfoListMessage, object>(PrintFriendshipInfoListMessage));
             this.Register<NpcListMessage>(new Action<NpcListMessage, object>(PrintNpcListMessage));
             this.Register<TradeSearchResult>(new Action<TradeSearchResult, object>(PrintTradeSearchResult));
-            //this.Register<>(new Action<, object>(Print));
+            this.Register<InventoryInfoMessage>(new Action<InventoryInfoMessage, object>(PrintInventoryInfoMessage));
             //this.Register<>(new Action<, object>(Print));
             //this.Register<>(new Action<, object>(Print));
 
@@ -969,6 +969,11 @@ namespace PacketCap
             foreach (TradeItemInfo i in msg.TradeItemList) {
                 Console.WriteLine("\t\tTID={0} CID={1} ChracterName={2} ItemClass={3} ItemCount={4} ItemPrice={5} CloseDate={6} HasAttribute={7} MaxArmorCondition={8} color1={9} color2={10} color3={11}",i.TID,i.CID,i.ChracterName,i.ItemClass,i.ItemCount,i.ItemPrice,i.CloseDate,i.HasAttribute,i.MaxArmorCondition,i.color1,i.color2,i.color3);
             }
+        }
+
+        private static void PrintInventoryInfoMessage(InventoryInfoMessage msg, object tag) {
+            //TODO: parse fully
+            Console.WriteLine(msg.ToString());
         }
     }
 }

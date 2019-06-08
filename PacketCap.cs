@@ -25,6 +25,8 @@ namespace PacketCap
 
         private static DateTime last = new DateTime();
 
+        private static bool sawSyn = false;
+
         static void Main(string[] args)
         {
             PacketDevice selectedDevice = getDevice();
@@ -36,7 +38,7 @@ namespace PacketCap
                                     PacketDeviceOpenAttributes.Promiscuous, // promiscuous mode
                                     1000))                                  // read timeout
             {
-                Console.WriteLine("Listening on " + selectedDevice.Description + "...");
+                Console.WriteLine("Waiting for TCP stream to start on {0}", selectedDevice.Description);
                 communicator.SetFilter("src host 192.168.0.200 and tcp src portrange 27000-27015");
                 // Retrieve the packets
                 PcapDotNet.Packets.Packet packet;
@@ -56,6 +58,19 @@ namespace PacketCap
         }
 
         private static void HandlePacket(PcapDotNet.Packets.Packet packet) {
+            bool syn = (packet.Buffer[47] & 0b10) == 0b10;
+            if (syn)
+            {
+                ct = new ServiceCore.CryptoTransformHeroes();
+                Console.WriteLine("TCP connection starting");
+                ClearBuffer();
+                sawSyn = true;
+                return;
+            }
+            else if (!sawSyn) {
+                return;
+            }
+            
             //clear the buffer if no messages for the last second
             DateTime now = new DateTime();
             if (now.Subtract(last).TotalSeconds > 1)
@@ -66,12 +81,16 @@ namespace PacketCap
             last = now;
             uint srcPort = ((uint)packet.Buffer[34] << 8) | (uint)packet.Buffer[35];
             uint dstPort = ((uint)packet.Buffer[36] << 8) | (uint)packet.Buffer[37];
+
             String srcIp = BytesToIpAddr(packet.Buffer, 26);
             String dstIp = BytesToIpAddr(packet.Buffer, 30);
 
             String src = String.Format("{0}:{1}", srcIp, srcPort);
             String dst = String.Format("{0}:{1}", dstIp, dstPort);
             int tcpStart = 34;
+            
+            //int seqNum = IPAddress.NetworkToHostOrder(BitConverter.ToInt32(packet.Buffer, 38));
+            
 
             //strip tcp header
             int dataStart = tcpStart + 20;
@@ -81,13 +100,13 @@ namespace PacketCap
             }
 
             int dataBytes = packet.Length - dataStart;
-            if (dataBytes == 0)
+            /*if (dataBytes == 0)
             {
                 ClearBuffer();
                 Console.WriteLine("TCP connection reset");
                 ct = new ServiceCore.CryptoTransformHeroes();
                 return;
-            }
+            }*/
             if (dataBytes == 6) {
                 Console.WriteLine("Ping");
                 ClearBuffer();
@@ -96,21 +115,21 @@ namespace PacketCap
 
             String timestamp = packet.Timestamp.ToString("yyyy-MM-dd hh:mm:ss.fff");
             recvSize.AddLast(dataBytes);
-            Console.WriteLine(timestamp + ": " + src + "->" + dst + " bytes=" + dataBytes);
+            Console.WriteLine("{0}: {1}->{2} bytes={3}",timestamp,src,dst,dataBytes);
             Devcat.Core.Net.Message.Packet p;
             ArraySegment<byte> dataSeg;
 
             dataSeg = new ArraySegment<byte>(packet.Buffer, dataStart, dataBytes);
             p = new Devcat.Core.Net.Message.Packet(dataSeg);
-            //Console.WriteLine("Decrypting a {0} byte array segment", dataSeg.Count);
+            
             long salt = p.InstanceId;
             ct.Decrypt(dataSeg, salt);
 
             Buffer.BlockCopy(packet.Buffer, dataStart, buffer, bufLen, dataBytes);
             bufLen += dataBytes;
 
-            bool reachedEnd = false;
-            while (!reachedEnd && bufLen != 0)
+            
+            while (bufLen != 0)
             {
                 dataSeg = new ArraySegment<byte>(buffer, 0, bufLen);
                 p = new Devcat.Core.Net.Message.Packet(dataSeg);
@@ -152,7 +171,7 @@ namespace PacketCap
                     Console.WriteLine("Waiting for {0} bytes{1}", pLen - bufLen, lookForMsgType);
                     return;
                 }
-                if (pLen <= 2 || pLen == 6) {
+                if (pLen <= 3 || pLen == 6) {
                     //ClearBuffer();
                     ShortenBuffer(pLen);
                     Console.WriteLine("Invalid data packet with Length={0}",pLen);
