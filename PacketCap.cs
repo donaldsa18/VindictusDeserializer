@@ -132,7 +132,7 @@ namespace PacketCap
                 }
                 catch (System.Runtime.Serialization.SerializationException e)
                 {
-                    Console.WriteLine("bufLen={0} recvSize=[{1}]", bufLen, recvSizeToString());
+                    Console.WriteLine("bufLen={0} recvSize={1}", bufLen, recvSizeToString());
                     Console.WriteLine("Bad length {0}", e.Message);
                     RemovePacket();
                     continue;
@@ -152,7 +152,7 @@ namespace PacketCap
                     Console.WriteLine("Waiting for {0} bytes{1}", pLen - bufLen, lookForMsgType);
                     return;
                 }
-                if (pLen <= 2) {
+                if (pLen <= 2 || pLen == 6) {
                     //ClearBuffer();
                     ShortenBuffer(pLen);
                     Console.WriteLine("Invalid data packet with Length={0}",pLen);

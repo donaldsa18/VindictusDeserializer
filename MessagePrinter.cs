@@ -99,11 +99,27 @@ namespace PacketCap
             this.Register<MaxDurabilityRepairItemMessage>(new Action<MaxDurabilityRepairItemMessage, object>(PrintMaxDurabilityRepairItemMessage));
             this.Register<SecondPasswordResultMessage>(new Action<SecondPasswordResultMessage, object>(PrintSecondPasswordResultMessage));
             this.Register<CharacterCommonInfoMessage>(new Action<CharacterCommonInfoMessage, object>(PrintCharacterCommonInfoMessage));
-            //this.Register<>(new Action<, object>(Print));
-            //this.Register<>(new Action<, object>(Print));
-            //this.Register<>(new Action<, object>(Print));
-            //this.Register<>(new Action<, object>(Print));
-            //this.Register<>(new Action<, object>(Print));
+            this.Register<ChannelServerAddress>(new Action<ChannelServerAddress, object>(PrintChannelServerAddress));
+            this.Register<SystemMessage>(new Action<SystemMessage, object>(PrintSystemMessage));
+            this.Register<NpcTalkMessage>(new Action<NpcTalkMessage, object>(PrintNpcTalkMessage));
+            this.Register<HousingStartGrantedMessage>(new Action<HousingStartGrantedMessage, object>(PrintHousingStartGrantedMessage));
+            this.Register<UpdateStoryGuideMessage>(new Action<UpdateStoryGuideMessage, object>(PrintUpdateStoryGuideMessage));
+            this.Register<AddFriendshipInfoMessage>(new Action<AddFriendshipInfoMessage, object>(PrintAddFriendshipInfoMessage));
+            this.Register<SkillListMessage>(new Action<SkillListMessage, object>(PrintSkillListMessage));
+            this.Register<LoginOkMessage>(new Action<LoginOkMessage, object>(PrintLoginOkMessage));
+            this.Register<MailListMessage>(new Action<MailListMessage, object>(PrintMailListMessage));
+            this.Register<TodayMissionInitializeMessage>(new Action<TodayMissionInitializeMessage, object>(PrintTodayMissionInitializeMessage));
+            this.Register<APMessage>(new Action<APMessage, object>(PrintAPMessage));
+            this.Register<GuildResultMessage>(new Action<GuildResultMessage, object>(PrintGuildResultMessage));
+            this.Register<CostumeUpdateMessage>(new Action<CostumeUpdateMessage, object>(PrintCostumeUpdateMessage));
+            this.Register<EquipmentInfoMessage>(new Action<EquipmentInfoMessage, object>(PrintEquipmentInfoMessage));
+            this.Register<UpdateStatMessage>(new Action<UpdateStatMessage, object>(PrintUpdateStatMessage));
+            this.Register<UpdateInventoryInfoMessage>(new Action<UpdateInventoryInfoMessage, object>(PrintUpdateInventoryInfoMessage));
+            this.Register<StatusEffectUpdated>(new Action<StatusEffectUpdated, object>(PrintStatusEffectUpdated));
+            this.Register<QuestProgressMessage>(new Action<QuestProgressMessage, object>(PrintQuestProgressMessage));
+            this.Register<FriendshipInfoListMessage>(new Action<FriendshipInfoListMessage, object>(PrintFriendshipInfoListMessage));
+            this.Register<NpcListMessage>(new Action<NpcListMessage, object>(PrintNpcListMessage));
+            this.Register<TradeSearchResult>(new Action<TradeSearchResult, object>(PrintTradeSearchResult));
             //this.Register<>(new Action<, object>(Print));
             //this.Register<>(new Action<, object>(Print));
             //this.Register<>(new Action<, object>(Print));
@@ -119,9 +135,7 @@ namespace PacketCap
         }
         private static void PrintSyncFeatureMatrixMessage(SyncFeatureMatrixMessage msg, object tag) {
             Console.WriteLine("SyncFeatureMatrixMessage:");
-            foreach (KeyValuePair<String, String> entry in msg.FeatureDic) {
-                Console.WriteLine("\t{0}: {1}",entry.Key,entry.Value);
-            }
+            Console.WriteLine(DictToString<String, String>(msg.FeatureDic, "FeatureDic", 1));
         }
         private static void PrintGiveAPMessage(GiveAPMessage msg, object tag) {
             Console.WriteLine(msg);
@@ -174,46 +188,35 @@ namespace PacketCap
             Console.WriteLine(msg.ToString());
         }
 
+        private static string UpdateTypeToString(UpdateHistoryBookMessage.UpdateType t) {
+            switch (t)
+            {
+                case UpdateHistoryBookMessage.UpdateType.Unknown:
+                    return "Unknown";
+                case UpdateHistoryBookMessage.UpdateType.Remove:
+                    return "Remove";
+                case UpdateHistoryBookMessage.UpdateType.Add:
+                    return "Add";
+                case UpdateHistoryBookMessage.UpdateType.Full:
+                    return "Full";
+                default:
+                    return "";
+            }
+        }
+
         private static void PrintUpdateHistoryBookMessage(UpdateHistoryBookMessage msg, object tag) {
             Console.WriteLine("UpdateHistoryBookMessage:");
-            StringBuilder sb = new StringBuilder();
-            sb.Append("\tType=");
-            switch (msg.Type) {
-                case UpdateHistoryBookMessage.UpdateType.Unknown:
-                    sb.Append("Unknown");
-                    break;
-                case UpdateHistoryBookMessage.UpdateType.Remove:
-                    sb.Append("Remove");
-                    break;
-                case UpdateHistoryBookMessage.UpdateType.Add:
-                    sb.Append("Add");
-                    break;
-                case UpdateHistoryBookMessage.UpdateType.Full:
-                    sb.Append("Full");
-                    break;
-            }
-            Console.WriteLine(sb.ToString());
-            sb = new StringBuilder();
-            sb.Append("\tHistoryBooks=[");
-            foreach (String book in msg.HistoryBooks) {
-                sb.Append(book);
-                sb.Append(",");
-            }
-            sb.Append("]");
-            Console.WriteLine(sb.ToString());
+            Console.WriteLine("\tType={0}",UpdateTypeToString(msg.Type));
+
+            String arr = msg.HistoryBooks != null ? String.Join(",", msg.HistoryBooks) : "";
+            Console.WriteLine("\tHistoryBooks=[{0}]", arr);
         }
 
         private static void PrintRequestItemCombinationMessage(RequestItemCombinationMessage msg, object tag) {
             Console.WriteLine("RequestItemCombinationMessage:");
             Console.WriteLine("\tcombinedEquipItemClass={0}", msg.combinedEquipItemClass);
-            StringBuilder sb = new StringBuilder();
-            sb.Append("\t partsIDList=[");
-            foreach (long part in msg.partsIDList) {
-                sb.Append(part);
-                sb.Append(",");
-            }
-            sb.Append("]");
-            Console.WriteLine(sb.ToString());
+            Console.WriteLine("\tpartsIDList=[{0}]", String.Join(",", msg.partsIDList));
+            
         }
         private static void PrintGiveCashShopDiscountCouponResultMessage(GiveCashShopDiscountCouponResultMessage msg, object tag) {
             Console.WriteLine("GiveCashShopDiscountCouponResultMessage: result={0}", msg.ToString());
@@ -272,48 +275,35 @@ namespace PacketCap
             return c;
         }
 
-        private static void PrintGameJoinMemberInfo(GameJoinMemberInfo m, int tabs) {
+        private static string GameJoinMemberInfoToString(GameJoinMemberInfo m, int tabs) {
             String t = new string('\t', tabs);
-
-            Console.WriteLine("{0}Name={1}", t, m.Name);
-            Console.WriteLine("{0}Level={1}", t, m.Level);
+            StringBuilder sb = new StringBuilder();
+            sb.AppendFormat("{0}Name={1}", t, m.Name);
+            sb.AppendFormat("{0}Level={1}", t, m.Level);
             String c = BaseCharacterToString((BaseCharacter)m.BaseClass);
 
-            Console.WriteLine("{0}Class={1}", t, c);
-            Console.WriteLine("{0}TitleID={1}", t, m.TitleID);//translate using heroes.db3 and translation xml
-            Console.WriteLine("{0}TitleCount={1}", t, m.TitleCount);
+            sb.AppendFormat("{0}Class={1}", t, c);
+            sb.AppendFormat("{0}TitleID={1}", t, m.TitleID);//translate using heroes.db3 and translation xml
+            sb.AppendFormat("{0}TitleCount={1}", t, m.TitleCount);
 
-            Console.WriteLine("{0}Stats:", t);
-            if (m.Stats != null) {
-                foreach (KeyValuePair<string, int> entry in m.Stats)
-                {
-                    Console.WriteLine("{0}\t{0}={1}", t, entry.Key, entry.Value);
-                }
-            }
-            if (m.CostumeInfo != null) {
-                Console.WriteLine("{0}Height={1}", t, m.CostumeInfo.Height);
-                Console.WriteLine("{0}Bust={1}", t, m.CostumeInfo.Bust);
-            }
 
-            Console.WriteLine("{0}EquippedItems:");
-            if (m.EquippedItems != null) {
-                foreach (KeyValuePair<int, string> entry in m.EquippedItems)
-                {
-                    Console.WriteLine("{0}{1}\t={1}", t, entry.Key, entry.Value);
-                }
-            }
+            sb.AppendFormat(DictToString<string, int>(m.Stats, "Stats", 1+tabs));
+            sb.AppendFormat(CostumeInfoToString(m.CostumeInfo, tabs));
+            sb.AppendFormat("{0}EquippedItems:",t);
+            sb.AppendFormat(DictToString<int,string>(m.EquippedItems, "EquippedItems", 1+tabs));
 
             if (m.Pet != null) {
                 Console.WriteLine("{0}Pet: Name={1}, Type={2}", t, m.Pet.PetName, m.Pet.PetType);
             }
-            
-            Console.WriteLine("{0}...", t);//much more info if needed
+
+            sb.AppendFormat("{0}...", t);//much more info if needed
+            return sb.ToString();
         }
 
         private static void PrintHousingMemberInfoMessage(HousingMemberInfoMessage msg, object tag) {
             //TODO: connect to database to collect avatar info
             Console.WriteLine("HousingMemberInfoMessage:");
-            PrintGameJoinMemberInfo(msg.MemberInfo,1);
+            Console.WriteLine(GameJoinMemberInfoToString(msg.MemberInfo,1));
         }
 
         private static void PrintHousingKickMessage(HousingKickMessage msg, object tag) {
@@ -328,25 +318,26 @@ namespace PacketCap
             Console.WriteLine(msg.ToString());
         }
 
-        private static void PrintEnterHousingMessage(EnterHousingMessage msg, object tag) {
-            String housingType = "";
-            switch (msg.EnterType) {
+        private static string EnterHousingTypeToString(EnterHousingType t) {
+            switch (t)
+            {
                 case EnterHousingType.Default:
-                    housingType = "Default";
-                    break;
+                    return "Default";
                 case EnterHousingType.OpenPublic:
-                    housingType = "OpenPublic";
-                    break;
+                    return "OpenPublic";
                 case EnterHousingType.OpenPrivate:
-                    housingType = "OpenPrivate";
-                    break;
+                    return "OpenPrivate";
                 case EnterHousingType.EnterAny:
-                    housingType = "EnterAny";
-                    break;
+                    return "EnterAny";
                 case EnterHousingType.EnterSpecified:
-                    housingType = "EnterSpecified";
-                    break;
+                    return "EnterSpecified";
+                default:
+                    return "";
             }
+        }
+
+        private static void PrintEnterHousingMessage(EnterHousingMessage msg, object tag) {
+            String housingType = EnterHousingTypeToString(msg.EnterType);
             Console.WriteLine("EnterHousingMessage: CharacterName={0} HousingIndex={1} EnterType={2} HousingPlayID={3}", msg.CharacterName, msg.HousingIndex, housingType, msg.HousingPlayID);
         }
         private static void PrintEndPendingDialogMessage(EndPendingDialogMessage msg, object tag) {
@@ -378,15 +369,8 @@ namespace PacketCap
 
         private static void PrintBurnRewardItemsMessage(BurnRewardItemsMessage msg, object tag) {
             Console.WriteLine("BurnRewardItemsMessage:");
-            Console.WriteLine("\tRewardItems:");
-            foreach (KeyValuePair<string, int> entry in msg.RewardItems) {
-                Console.WriteLine("\t\t{0}={1}",entry.Key,entry.Value);
-            }
-            Console.WriteLine("\tRewardMailItems:");
-            foreach (KeyValuePair<string, int> entry in msg.RewardMailItems)
-            {
-                Console.WriteLine("\t\t{0}={1}", entry.Key, entry.Value);
-            }
+            Console.WriteLine(DictToString<string, int>(msg.RewardItems, "RewardItems", 1));
+            Console.WriteLine(DictToString<string, int>(msg.RewardMailItems, "RewardMailItems", 1));
         }
 
         private static void PrintAllUserGoalEventModifyMessage(AllUserGoalEventModifyMessage msg, object tag) {
@@ -425,18 +409,30 @@ namespace PacketCap
             Console.WriteLine(msg.ToString());
         }
 
+        private static string ListToString<T>(ICollection<T> list, String name, int numTabs) {
+            StringBuilder sb = new StringBuilder();
+            String t = new string('\t', numTabs);
+            sb.Append(t);
+            sb.Append(name);
+            sb.Append(":\n");
+            if (list == null) {
+                return sb.ToString();
+            }
+            t = new string('\t', numTabs+1);
+            foreach (T element in list) {
+                if (element == null) {
+                    continue;
+                }
+                sb.Append(t);
+                sb.Append(element);
+                sb.Append("\n");
+            }
+            return sb.ToString();
+        }
+
         private static void PrintHousingRoomListMessage(HousingRoomListMessage msg, object tag) {
             Console.WriteLine("HousingRoomListMessage:");
-            if (msg.HousingRoomList == null) {
-                return;
-            }
-            foreach (HousingRoomInfo info in msg.HousingRoomList)
-            {
-                if (info != null)
-                {
-                    Console.WriteLine("\t{0}", info.ToString());
-                }
-            }
+            Console.WriteLine(ListToString<HousingRoomInfo>(msg.HousingRoomList, "HousingRoomList", 1));
         }
 
         private static void PrintHotSpringRequestInfoResultMessage(HotSpringRequestInfoResultMessage msg, object tag)
@@ -465,28 +461,28 @@ namespace PacketCap
             Console.WriteLine(msg.ToString());
         }
 
-        private static void PrintAddFriendShipResultMessage(AddFriendShipResultMessage msg, object tag) {
-            String result = "";
-            switch ((AddFriendShipResultMessage.AddFriendShipResult)msg.Result) {
+        private static string AddFriendShipResultMessageToString(AddFriendShipResultMessage.AddFriendShipResult r) {
+            switch (r)
+            {
                 case AddFriendShipResultMessage.AddFriendShipResult.Result_Already_Added:
-                    result = "Result_Already_Added";
-                    break;
+                    return "Result_Already_Added";
                 case AddFriendShipResultMessage.AddFriendShipResult.Result_Character_NotFounded:
-                    result = "Result_Character_NotFounded";
-                    break;
+                    return "Result_Character_NotFounded";
                 case AddFriendShipResultMessage.AddFriendShipResult.Result_Exception:
-                    result = "Result_Exception";
-                    break;
+                    return "Result_Exception";
                 case AddFriendShipResultMessage.AddFriendShipResult.Result_FriendCount_Max:
-                    result = "Result_FriendCount_Max";
-                    break;
+                    return "Result_FriendCount_Max";
                 case AddFriendShipResultMessage.AddFriendShipResult.Result_Ok:
-                    result = "Result_Ok";
-                    break;
+                    return "Result_Ok";
                 case AddFriendShipResultMessage.AddFriendShipResult.Result_SameID:
-                    result = "Result_SameID";
-                    break;
+                    return "Result_SameID";
+                default:
+                    return "";
             }
+        }
+
+        private static void PrintAddFriendShipResultMessage(AddFriendShipResultMessage msg, object tag) {
+            String result = AddFriendShipResultMessageToString((AddFriendShipResultMessage.AddFriendShipResult)msg.Result);
             Console.WriteLine("AddFriendShipResultMessage: friendName={0} Result={1}",msg.friendName,result);
         }
 
@@ -556,41 +552,38 @@ namespace PacketCap
         }
 
         private static void PrintAllUserGoalEventMessage(AllUserGoalEventMessage msg, object tag) {
-            Console.WriteLine("AllUserGoalEventMessage: AllUserGoalInfo:");
-            foreach (KeyValuePair<int, int> goal in msg.AllUserGoalInfo) {
-                Console.WriteLine("\t{0}={1}",goal.Key,goal.Value);
-            }
+            Console.WriteLine("AllUserGoalEventMessage:");
+            Console.WriteLine(DictToString<int, int>(msg.AllUserGoalInfo, "AllUserGoalInfo", 1));
         }
 
         private static void PrintLeaveHousingMessage(LeaveHousingMessage msg, object tag) {
             Console.WriteLine("LeaveHousingMessage []");
         }
 
-        private static void PrintDecomposeItemResultMessage(DecomposeItemResultMessage msg, object tag) {
-            
-            String item = "";
-            switch (msg.ResultEXP) {
+        private static string DecomposeItemResultEXPToString(DecomposeItemResultEXP d) {
+            switch (d)
+            {
                 case DecomposeItemResultEXP.fail:
-                    item = "fail";
-                    break;
+                    return "fail";
                 case DecomposeItemResultEXP.increase:
-                    item = "increase";
-                    break;
+                    return "increase";
                 case DecomposeItemResultEXP.not_increase:
-                    item = "not_increase";
-                    break;
+                    return "not_increase";
                 case DecomposeItemResultEXP.not_increase_already_max:
-                    item = "not_increase_already_max";
-                    break;
+                    return "not_increase_already_max";
                 case DecomposeItemResultEXP.part_extract:
-                    item = "part_extract";
-                    break;
+                    return "part_extract";
+                default:
+                    return "";
             }
+        }
+
+        private static void PrintDecomposeItemResultMessage(DecomposeItemResultMessage msg, object tag) {
+
+            String item = DecomposeItemResultEXPToString(msg.ResultEXP);
             Console.WriteLine("DecomposeItemResultMessage: ResultEXP={0}",item);
-            Console.WriteLine("\tGiveItem:");
-            foreach (string itemclass in msg.GiveItemClassList) {
-                Console.WriteLine("\t\t{0}",itemclass);
-            }
+            Console.WriteLine(ListToString<string>(msg.GiveItemClassList, "GiveItemClassList", 1));
+            
         }
 
         private static void PrintQueryAvatarSynthesisMaterialRecipesMessage(QueryAvatarSynthesisMaterialRecipesMessage msg, object tag) {
@@ -613,32 +606,33 @@ namespace PacketCap
             Console.WriteLine("\tHasFreeTitle={0}",msg.HasFreeTitle);
         }
 
+        private static string BlessStoneToString(BlessStoneType t) {
+            switch (t)
+            {
+                case BlessStoneType.NONE:
+                    return "NONE";
+                case BlessStoneType.ALL:
+                    return "ALL";
+                case BlessStoneType.EXP:
+                    return "EXP";
+                case BlessStoneType.LUCK:
+                    return "LUCK";
+                case BlessStoneType.AP:
+                    return "AP";
+                case BlessStoneType.StoneTypeCount:
+                    return "StoneTypeCount";
+                default:
+                    return "";
+            }
+        }
+
         private static void PrintInsertBlessStoneCompleteMessage(InsertBlessStoneCompleteMessage msg, object tag) {
             Console.WriteLine("InsertBlessStoneCompleteMessage:");
             Console.WriteLine("\tSlot={0}",msg.Slot);
             Console.WriteLine("\tOwnerList=[{0}]",String.Join(",",msg.OwnerList));
             StringBuilder sb = new StringBuilder();
             foreach (BlessStoneType t in msg.TypeList) {
-                switch (t) {
-                    case BlessStoneType.NONE:
-                        sb.Append("NONE");
-                        break;
-                    case BlessStoneType.ALL:
-                        sb.Append("ALL");
-                        break;
-                    case BlessStoneType.EXP:
-                        sb.Append("EXP");
-                        break;
-                    case BlessStoneType.LUCK:
-                        sb.Append("LUCK");
-                        break;
-                    case BlessStoneType.AP:
-                        sb.Append("AP");
-                        break;
-                    case BlessStoneType.StoneTypeCount:
-                        sb.Append("StoneTypeCount");
-                        break;
-                }
+                sb.Append(BlessStoneToString(t));
                 sb.Append(",");
             }
             Console.WriteLine("\tTypeList=[{0}]",sb.ToString());
@@ -674,12 +668,9 @@ namespace PacketCap
 
         private static void PrintHousingGameHostedMessage(HousingGameHostedMessage msg, object tag) {
             Console.WriteLine("HousingGameHostedMessage: Map={0} IsOwner={1}",msg.Map,msg.IsOwner);
-            Console.WriteLine("\tHousingProps:");
-            foreach (HousingPropInfo info in msg.HousingProps) {
-                Console.WriteLine("\t\t{0},info.ToString()");
-            }
+            Console.WriteLine(ListToString<HousingPropInfo>(msg.HousingProps, "HousingProps", 1));
             Console.WriteLine("\tHostInfo:");
-            PrintGameJoinMemberInfo(msg.HostInfo, 2);
+            Console.WriteLine(GameJoinMemberInfoToString(msg.HostInfo, 2));
         }
 
         private static void PrintHousingKickedMessage(HousingKickedMessage msg, object tag) {
@@ -703,22 +694,143 @@ namespace PacketCap
         }
 
         private static String VocationToString(VocationEnum v) {
-            String s = "";
             switch (v) {
                 case VocationEnum.Invalid:
-                    s = "Invalid";
-                    break;
+                    return "Invalid";
                 case VocationEnum.None:
-                    s = "None";
-                    break;
+                    return "None";
                 case VocationEnum.Paladin:
-                    s = "Paladin";
-                    break;
+                    return "Paladin";
                 case VocationEnum.DarkKnight:
-                    s = "DarkKnight";
-                    break;
+                    return "DarkKnight";
+                default:
+                    return "";
             }
-            return s;
+        }
+
+        private static String DictToString<T1,T2>(IDictionary<T1, T2> dict, String name, int numTabs) {
+            String t = new string('\t', numTabs);
+            StringBuilder sb = new StringBuilder();
+            sb.Append(t);
+            t = new string('\t', numTabs+1);
+            sb.Append(name);
+            sb.Append(":\n");
+            if (dict == null) {
+                return sb.ToString();
+            }
+            foreach (KeyValuePair<T1, T2> entry in dict) {
+                sb.Append(t);
+                sb.Append(entry.Key);
+                sb.Append("=");
+                sb.Append(entry.Value);
+                sb.Append("\n");
+            }
+
+            return sb.ToString();
+        }
+
+        private static String ColorDictToString(IDictionary<int,int> dict, String name, int numTabs) {
+            HashSet<int> keys = new HashSet<int>();
+            StringBuilder sb = new StringBuilder();
+            String t = new string('\t', numTabs);
+            sb.Append(t);
+            sb.Append(name);
+            sb.Append(":\n");
+            if (dict == null) {
+                return sb.ToString();
+            }
+            t = new string('\t', numTabs+1);
+            foreach (KeyValuePair<int, int> entry in dict) {
+                keys.Add(entry.Key / 3);
+            }
+            foreach (int key in keys) {
+                int val = -1;
+                sb.Append(t);
+                sb.Append(key);
+                sb.Append("=(");
+                dict.TryGetValue(key, out val);
+                sb.Append(val);
+                sb.Append(",");
+                val = -1;
+                dict.TryGetValue(key+1, out val);
+                sb.Append(val);
+                sb.Append(",");
+                val = -1;
+                dict.TryGetValue(key+2, out val);
+                sb.Append(val);
+                sb.Append(")\n");
+            }
+            return sb.ToString();
+        }
+
+        private static String CostumeInfoToString(CostumeInfo c, int numTabs) {
+            //TODO: send to database
+            if (c == null) {
+                return "";
+            }
+            String t = new string('\t', numTabs);
+            StringBuilder sb = new StringBuilder();
+            sb.Append(t);
+            sb.Append("CostumeInfo:\n");
+            t = new string('\t', numTabs+1);
+            sb.Append(t);
+            sb.Append("Shineness=");
+            sb.Append(c.Shineness);
+            sb.Append("\n");
+            sb.Append(t);
+            sb.Append("Height=");
+            sb.Append(c.Height);
+            sb.Append("\n");
+            sb.Append(t);
+            sb.Append("Bust=");
+            sb.Append(c.Bust);
+            sb.Append("\n");
+            sb.Append(t);
+            sb.Append("PaintingPosX=");
+            sb.Append(c.PaintingPosX);
+            sb.Append("\n");
+            sb.Append(t);
+            sb.Append("PaintingPosY=");
+            sb.Append(c.PaintingPosY);
+            sb.Append("\n");
+            sb.Append(t);
+            sb.Append("PaintingRotation=");
+            sb.Append(c.PaintingRotation);
+            sb.Append("\n");
+            sb.Append(t);
+            sb.Append("PaintingSize=");
+            sb.Append(c.PaintingSize);
+            sb.Append("\n");
+            sb.Append(t);
+            sb.Append("HideHeadCostume=");
+            sb.Append(c.HideHeadCostume);
+            sb.Append("\n");
+            sb.Append(t);
+            sb.Append("CafeType=");
+            sb.Append(c.CafeType);
+            sb.Append("\n");
+            sb.Append(t);
+            sb.Append("IsReturn=");
+            sb.Append(c.IsReturn);
+            sb.Append("\n");
+            sb.Append(t);
+            sb.Append("VIPCode=");
+            sb.Append(c.VIPCode);
+            sb.Append("\n");
+
+            sb.Append(DictToString<int,int>(c.CostumeTypeInfo, "CostumeTypeInfo", numTabs));
+            sb.Append(ColorDictToString(c.ColorInfo, "ColorInfo", numTabs));
+            sb.Append(DictToString<int, bool>(c.AvatarInfo, "AvatarInfo", numTabs));
+            sb.Append(DictToString<int, int>(c.AvatarHideInfo, "AvatarHideInfo", numTabs));
+            sb.Append(DictToString<int, byte>(c.PollutionInfo, "PollutionInfo", numTabs));
+            sb.Append(DictToString<int, int>(c.EffectInfo, "EffectInfo", numTabs));
+            sb.Append(DictToString<int, int>(c.DecorationInfo, "DecorationInfo", numTabs));
+            sb.Append(ColorDictToString(c.DecorationColorInfo, "DecorationColorInfo", numTabs));
+            sb.Append(DictToString<int, float>(c.BodyShapeInfo, "BodyShapeInfo", numTabs));
+            //sb.Append(DictToString<int, int>(c, "", numTabs));
+            
+            //c.CostumeTypeInfo == Costume.CostumeSN.Value
+            return sb.ToString();
         }
 
         private static void PrintCharacterCommonInfoMessage(CharacterCommonInfoMessage msg, object tag) {
@@ -730,11 +842,8 @@ namespace PacketCap
             Console.WriteLine("\tLevel={0}",c.Level);
             Console.WriteLine("\tTitle={0}",c.Title);
             Console.WriteLine("\tTitleCount={0}",c.TitleCount);
-            if (c.Costume != null)
-            {
-                Console.WriteLine("\tHeight={1}", c.Costume.Height);
-                Console.WriteLine("\tBust={1}", c.Costume.Bust);
-            }
+            Console.WriteLine(CostumeInfoToString(c.Costume,1));
+            
 
             Console.WriteLine("\tQuote={0}",c.Quote);
             Console.WriteLine("\tGuildName={0}",c.GuildName);
@@ -749,6 +858,117 @@ namespace PacketCap
 
         private static void PrintChannelServerAddress(ChannelServerAddress msg, object tag) {
             Console.WriteLine("ChannelServerAddress: ChannelID={0} Address={1} Port={2} Key={3}",msg.ChannelID,msg.Address,msg.Port,msg.Key);
+        }
+
+        private static void PrintSystemMessage(SystemMessage msg, object tag) {
+            Console.WriteLine(msg.ToString());
+        }
+
+        private static void PrintNpcTalkMessage(NpcTalkMessage msg, object tag) {
+            Console.WriteLine(ListToString<NpcTalkEntity>(msg.Content, "NpcTalkMessage", 0));
+        }
+        private static void PrintHousingStartGrantedMessage(HousingStartGrantedMessage msg, object tag) {
+            Console.WriteLine("HousingStartGrantedMessage: NewSlot={0} NewKey={1}",msg.NewSlot,msg.NewKey);
+        }
+
+        private static void PrintUpdateStoryGuideMessage(UpdateStoryGuideMessage msg, object tag) {
+            Console.WriteLine(msg.ToString());
+        }
+
+        private static void PrintAddFriendshipInfoMessage(AddFriendshipInfoMessage msg, object tag) {
+            Console.WriteLine("AddFriendshipInfoMessage: FriendID={0} FriendLimitCount={1}", msg.FriendID, msg.FriendLimitCount);
+        }
+
+        private static void PrintSkillListMessage(SkillListMessage msg, object tag) {
+            Console.WriteLine(msg.ToString());
+        }
+
+        private static void PrintLoginOkMessage(LoginOkMessage msg, object tag) {
+            Console.WriteLine("LoginOkMessage: Time={0}",msg.Time);
+            //TODO: find out what user care stuff does
+        }
+
+        private static void PrintMailListMessage(MailListMessage msg, object tag) {
+            Console.WriteLine("MailListMessage:");
+            Console.WriteLine(ListToString<BriefMailInfo>(msg.ReceivedMailList, "ReceivedMailList", 1));
+            Console.WriteLine(ListToString<BriefMailInfo>(msg.SentMailList,"SentMailList",1));
+        }
+        private static void PrintTodayMissionInitializeMessage(TodayMissionInitializeMessage msg, object tag) {
+            Console.WriteLine("TodayMissionInitializeMessage:");
+            Console.WriteLine("\t{}", String.Join("\n\t", msg.ToString().Split('\n')));
+        }
+
+        private static void PrintAPMessage(APMessage msg, object tag) {
+            Console.WriteLine(msg.ToString());
+        }
+
+        private static void PrintGuildResultMessage(GuildResultMessage msg, object tag) {
+            Console.WriteLine(msg.ToString());
+        }
+
+        private static void PrintCostumeUpdateMessage(CostumeUpdateMessage msg, object tag) {
+            Console.WriteLine("CostumeUpdateMessage:");
+            Console.WriteLine(CostumeInfoToString(msg.CostumeInfo, 1));
+        }
+
+        private static void PrintEquipmentInfoMessage(EquipmentInfoMessage msg, object tag) {
+            Console.WriteLine(DictToString<int, long>(msg.EquipInfos, "EquipmentInfoMessage", 0));
+        }
+
+        private static void PrintUpdateStatMessage(UpdateStatMessage msg, object tag) {
+            Console.WriteLine(DictToString<string, int>(msg.Stat, "UpdateStatMessage",0));
+        }
+
+        private static void PrintUpdateInventoryInfoMessage(UpdateInventoryInfoMessage msg, object tag) {
+            Console.WriteLine("UpdateInventoryInfoMessage: [?]");
+        }
+
+        private static void PrintStatusEffectUpdated(StatusEffectUpdated msg, object tag) {
+            Console.WriteLine("StatusEffectUpdated:");
+            Console.WriteLine("\tCharacterName={0}",msg.CharacterName);
+            Console.WriteLine("\tStatusEffects:");
+            if (msg.StatusEffects == null) {
+                return;
+            }
+            foreach (StatusEffectElement e in msg.StatusEffects) {
+                Console.WriteLine("\t\tType={0} Level={1} RemainTime={2} CombatCount={3}",e.Type,e.Level,e.RemainTime,e.CombatCount);
+            }
+        }
+
+        private static void PrintQuestProgressMessage(QuestProgressMessage msg, object tag) {
+            Console.WriteLine("QuestProgressMessage:");
+            Console.WriteLine(ListToString<QuestProgressInfo>(msg.QuestProgress, "QuestProgress", 1));
+            Console.WriteLine(ListToString<AchieveGoalInfo>(msg.AchievedGoals, "AchievedGoals", 1));
+        }
+
+        private static void PrintFriendshipInfoListMessage(FriendshipInfoListMessage msg, object tag) {
+            Console.WriteLine("FriendshipInfoListMessage: FriendList=[{0}]", String.Join(",", msg.FriendList));
+        }
+
+        private static void PrintNpcListMessage(NpcListMessage msg, object tag) {
+            Console.WriteLine("NpcListMessage:");
+            Console.WriteLine("\tBuildings:");
+            if (msg.Buildings == null) {
+                return;
+            }
+            foreach (BuildingInfo b in msg.Buildings) {
+                Console.WriteLine("\t\tBuildingID={0} Npcs=[{1}]", b.BuildingID, String.Join(",", b.Npcs));
+            }
+        }
+
+        private static void PrintTradeSearchResult(TradeSearchResult msg, object tag) {
+            //TODO: send to database
+            Console.WriteLine("TradeSearchResult:");
+            Console.WriteLine("\tUniqueNumber={0}", msg.UniqueNumber);
+            Console.WriteLine("\tIsMoreResult={0}", msg.IsMoreResult);
+            Console.WriteLine("\tresult={0}", msg.result);
+            Console.WriteLine("\tTradeItemList:");
+            if (msg.TradeItemList == null) {
+                return;
+            }
+            foreach (TradeItemInfo i in msg.TradeItemList) {
+                Console.WriteLine("\t\tTID={0} CID={1} ChracterName={2} ItemClass={3} ItemCount={4} ItemPrice={5} CloseDate={6} HasAttribute={7} MaxArmorCondition={8} color1={9} color2={10} color3={11}",i.TID,i.CID,i.ChracterName,i.ItemClass,i.ItemCount,i.ItemPrice,i.CloseDate,i.HasAttribute,i.MaxArmorCondition,i.color1,i.color2,i.color3);
+            }
         }
     }
 }
