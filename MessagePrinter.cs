@@ -6,6 +6,8 @@ using ServiceCore.EndPointNetwork.GuildService;
 using ServiceCore.EndPointNetwork.Housing;
 using ServiceCore.EndPointNetwork.Item;
 using ServiceCore.EndPointNetwork.MicroPlay;
+using ServiceCore.ItemServiceOperations;
+using ServiceCore.RankServiceOperations;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -121,7 +123,20 @@ namespace PacketCap
             this.Register<InventoryInfoMessage>(new Action<InventoryInfoMessage, object>(PrintInventoryInfoMessage));
             this.Register<AskSecondPasswordMessage>(new Action<AskSecondPasswordMessage, object>(PrintAskSecondPasswordMessage));
             this.Register<NoticeGameEnvironmentMessage>(new Action<NoticeGameEnvironmentMessage, object>(PrintNoticeGameEnvironmentMessage));
-            //this.Register<>(new Action<, object>(Print));
+            this.Register<SpSkillMessage>(new Action<SpSkillMessage, object>(PrintSpSkillMessage));
+            this.Register<VocationSkillListMessage>(new Action<VocationSkillListMessage, object>(PrintVocationSkillListMessage));
+            this.Register<WhisperFilterListMessage>(new Action<WhisperFilterListMessage, object>(PrintWhisperFilterListMessage));
+            this.Register<GetCharacterMissionStatusMessage>(new Action<GetCharacterMissionStatusMessage, object>(PrintGetCharacterMissionStatusMessage));
+            this.Register<SelectPatternMessage>(new Action<SelectPatternMessage, object>(PrintSelectPatternMessage));
+            this.Register<QueryHousingItemsMessage>(new Action<QueryHousingItemsMessage, object>(PrintQueryHousingItemsMessage));
+            this.Register<TitleListMessage>(new Action<TitleListMessage, object>(PrintTitleListMessage));
+            this.Register<FishingResultMessage>(new Action<FishingResultMessage, object>(PrintFishingResultMessage));
+            this.Register<PetListMessage>(new Action<PetListMessage, object>(PrintPetListMessage));
+            this.Register<PetFeedListMessage>(new Action<PetFeedListMessage, object>(PrintPetFeedListMessage));
+            this.Register<SharedInventoryInfoMessage>(new Action<SharedInventoryInfoMessage, object>(PrintSharedInventoryInfoMessage));
+            this.Register<TirCoinInfoMessage>(new Action<TirCoinInfoMessage, object>(PrintTirCoinInfoMessage));
+            this.Register<RankAlarmInfoMessage>(new Action<RankAlarmInfoMessage, object>(PrintRankAlarmInfoMessage));
+            this.Register<UpdateBattleInventoryInTownMessage>(new Action<UpdateBattleInventoryInTownMessage, object>(PrintUpdateBattleInventoryInTownMessage));
             //this.Register<>(new Action<, object>(Print));
             //this.Register<>(new Action<, object>(Print));
             //this.Register<>(new Action<, object>(Print));
@@ -984,6 +999,79 @@ namespace PacketCap
         }
 
         private static void PrintNoticeGameEnvironmentMessage(NoticeGameEnvironmentMessage msg, object tag) {
+            Console.WriteLine(msg.ToString());
+        }
+
+        private static void PrintSpSkillMessage(SpSkillMessage msg, object tag) {
+            Console.WriteLine(DictToString<int, string>(msg.SpSkills, "SpSkillMessage", 0));
+        }
+
+        private static void PrintVocationSkillListMessage(VocationSkillListMessage msg, object tag) {
+            Console.WriteLine(DictToString<string, int>(msg.SkillList, "VocationSkillListMessage", 0));
+        }
+
+        private static void PrintWhisperFilterListMessage(WhisperFilterListMessage msg, object tag) {
+            Console.WriteLine(DictToString<string, int>(msg.Filter, "WhisperFilterListMessage", 0));
+        }
+
+        private static void PrintGetCharacterMissionStatusMessage(GetCharacterMissionStatusMessage msg, object tag) {
+            Console.WriteLine("GetCharacterMissionStatusMessage:");
+            Console.WriteLine("\tMissionCompletionCount={0}",msg.MissionCompletionCount);
+            Console.WriteLine("\tRemainTimeToCleanMissionCompletionCount={0}", msg.RemainTimeToCleanMissionCompletionCount);
+            Console.WriteLine("\tMissionList:");
+            foreach (MissionMessage m in msg.MissionList) {
+                Console.WriteLine("\t\tMID={0} Title={1} Location={2} Description={3}", m.MID, m.Title, m.Location, m.Description);
+            }
+        }
+
+        private static void PrintSelectPatternMessage(SelectPatternMessage msg, object tag) {
+            Console.WriteLine(msg.ToString());
+        }
+
+        private static void PrintQueryHousingItemsMessage(QueryHousingItemsMessage msg, object tag) {
+            Console.WriteLine("QueryHousingItemsMessage: []");
+        }
+
+        private static void PrintTitleListMessage(TitleListMessage msg, object tag) {
+            Console.WriteLine("TitleListMessage:");
+            Console.WriteLine(ListToString<TitleSlotInfo>(msg.AccountTitles, "AccountTitles", 1));
+            Console.WriteLine(ListToString<TitleSlotInfo>(msg.Titles, "Titles", 1));
+        }
+
+        private static void PrintFishingResultMessage(FishingResultMessage msg, object tag) {
+            Console.WriteLine(ListToString<FishingResultInfo>(msg.FishingResult, "FishingResultMessage", 0));
+        }
+
+        private static void PrintPetListMessage(PetListMessage msg, object tag) {
+            Console.WriteLine("PetListMessage:");
+            Console.WriteLine("\tIsTotalPetList={0}", msg.IsTotalPetList);
+            Console.WriteLine(ListToString<PetStatusInfo>(msg.PetList, "PetList", 1));
+        }
+
+        private static void PrintPetFeedListMessage(PetFeedListMessage msg, object tag) {
+            Console.WriteLine("PetFeedListMessage:");
+            Console.WriteLine("\tIsTotalPetList={0}", msg.IsTotalPetList);
+            Console.WriteLine(ListToString<PetFeedElement>(msg.PetFeedList, "PetFeedList", 1));
+        }
+
+        private static void PrintSharedInventoryInfoMessage(SharedInventoryInfoMessage msg, object tag) {
+            Console.WriteLine("SharedInventoryInfoMessage:");
+            Console.WriteLine("\tStorageInfos:");
+            foreach (StorageInfo info in msg.StorageInfos) {
+                Console.WriteLine("\t\tstorageID={0} isAvailable={1} storageName={2} storageTag={3}",info.StorageID,info.IsAvailable,info.StorageName,info.StorageTag);
+            }
+            Console.WriteLine(ListToString<SlotInfo>(msg.SlotInfos, "SlotInfos", 1));
+        }
+
+        private static void PrintTirCoinInfoMessage(TirCoinInfoMessage msg, object tag) {
+            Console.WriteLine(DictToString<byte, int>(msg.TirCoinInfo, "TirCoinInfoMessage", 0));
+        }
+
+        private static void PrintRankAlarmInfoMessage(RankAlarmInfoMessage msg, object tag) {
+            Console.WriteLine(ListToString<RankAlarmInfo>(msg.RankAlarm,"RankAlarmInfoMessage", 0));
+        }
+
+        private static void PrintUpdateBattleInventoryInTownMessage(UpdateBattleInventoryInTownMessage msg, object tag) {
             Console.WriteLine(msg.ToString());
         }
     }
