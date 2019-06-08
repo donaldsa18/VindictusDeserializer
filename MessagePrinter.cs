@@ -137,7 +137,7 @@ namespace PacketCap
             this.Register<TirCoinInfoMessage>(new Action<TirCoinInfoMessage, object>(PrintTirCoinInfoMessage));
             this.Register<RankAlarmInfoMessage>(new Action<RankAlarmInfoMessage, object>(PrintRankAlarmInfoMessage));
             this.Register<UpdateBattleInventoryInTownMessage>(new Action<UpdateBattleInventoryInTownMessage, object>(PrintUpdateBattleInventoryInTownMessage));
-            //this.Register<>(new Action<, object>(Print));
+            this.Register<BingoBoardResultMessage>(new Action<BingoBoardResultMessage, object>(PrintBingoBoardResultMessage));
             //this.Register<>(new Action<, object>(Print));
             //this.Register<>(new Action<, object>(Print));
             //this.Register<>(new Action<, object>(Print));
@@ -913,7 +913,7 @@ namespace PacketCap
         }
         private static void PrintTodayMissionInitializeMessage(TodayMissionInitializeMessage msg, object tag) {
             Console.WriteLine("TodayMissionInitializeMessage:");
-            Console.WriteLine("\t{}", String.Join("\n\t", msg.ToString().Split('\n')));
+            Console.WriteLine("\t{0}", String.Join("\n\t", msg.ToString().Split('\n')));
         }
 
         private static void PrintAPMessage(APMessage msg, object tag) {
@@ -1073,6 +1073,32 @@ namespace PacketCap
 
         private static void PrintUpdateBattleInventoryInTownMessage(UpdateBattleInventoryInTownMessage msg, object tag) {
             Console.WriteLine(msg.ToString());
+        }
+
+        private static string BingoResultToString(BingoBoardResultMessage.Bingo_Result r) {
+            switch (r) {
+                case BingoBoardResultMessage.Bingo_Result.Result_Bingo_InitError:
+                    return "Result_Bingo_InitError";
+                case BingoBoardResultMessage.Bingo_Result.Result_Bingo_Expired:
+                    return "Result_Bingo_Expired";
+                case BingoBoardResultMessage.Bingo_Result.Result_Bingo_FeatureOff:
+                    return "Result_Bingo_FeatureOff";
+                case BingoBoardResultMessage.Bingo_Result.Result_Bingo_Ok:
+                    return "Result_Bingo_Ok";
+                case BingoBoardResultMessage.Bingo_Result.Result_Bingo_Completed:
+                    return "Result_Bingo_Completed";
+                case BingoBoardResultMessage.Bingo_Result.Result_Bingo_RewardProcess:
+                    return "Result_Bingo_RewardProcess";
+                case BingoBoardResultMessage.Bingo_Result.Result_Bingo_Loading:
+                    return "Result_Bingo_Loading";
+            }
+            return "";
+        }
+
+        private static void PrintBingoBoardResultMessage(BingoBoardResultMessage msg, object tag) {
+            Console.WriteLine("BingoBoardResultMessage:");
+            Console.WriteLine("\tResult={0}", BingoResultToString((BingoBoardResultMessage.Bingo_Result)msg.Result));
+            Console.WriteLine("\tBingoBoardNumbers=[{0}]", String.Join(",", msg.BingoBoardNumbers));
         }
     }
 }
