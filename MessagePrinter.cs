@@ -11,6 +11,9 @@ using ServiceCore.RankServiceOperations;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Reflection;
+using System.Linq;
+using System.Linq.Expressions;
 
 namespace PacketCap
 {
@@ -23,149 +26,62 @@ namespace PacketCap
             foreach (KeyValuePair<int, Guid> entry in getGuid) {
                 this.categoryDict.Add(entry.Value, entry.Key);
             }
-            this.Register<SyncFeatureMatrixMessage>(new Action<SyncFeatureMatrixMessage, object>(PrintSyncFeatureMatrixMessage));
-            this.Register<GiveAPMessage>(new Action<GiveAPMessage, object>(PrintGiveAPMessage));
-            this.Register<UserIDMessage>(new Action<UserIDMessage, object>(PrintUserIDMessage));
-            this.Register<CharacterListMessage>(new Action<CharacterListMessage, object>(PrintCharacterListMessage));
-            this.Register<AnswerFinishQuestMessage>(new Action<AnswerFinishQuestMessage, object>(PrintAnswerFinishQuestMessage));
-            this.Register<ExchangeMileageResultMessage>(new Action<ExchangeMileageResultMessage, object>(PrintExchangeMileageResultMessage));
-            this.Register<SecuredOperationMessage>(new Action<SecuredOperationMessage, object>(PrintSecuredOperationMessage));
-            this.Register<UseInventoryItemWithCountMessage>(new Action<UseInventoryItemWithCountMessage, object>(PrintUseInventoryItemWithCountMessage));
-            this.Register<AllUserJoinCompleteMessage>(new Action<AllUserJoinCompleteMessage, object>(PrintAllUserJoinCompleteMessage));
-            this.Register<RequestMarbleProcessNodeMessage>(new Action<RequestMarbleProcessNodeMessage, object>(PrintRequestMarbleProcessNodeMessage));
-            this.Register<QuerySharedInventoryMessage>(new Action<QuerySharedInventoryMessage, object>(PrintQuerySharedInventoryMessage));
-            this.Register<UpdateHistoryBookMessage>(new Action<UpdateHistoryBookMessage, object>(PrintUpdateHistoryBookMessage));
-            this.Register<RequestItemCombinationMessage>(new Action<RequestItemCombinationMessage, object>(PrintRequestItemCombinationMessage));
-            this.Register<GiveCashShopDiscountCouponResultMessage>(new Action<GiveCashShopDiscountCouponResultMessage, object>(PrintGiveCashShopDiscountCouponResultMessage));
-            this.Register<UpdateHousingPropsMessage>(new Action<UpdateHousingPropsMessage, object>(PrintUpdateHousingPropsMessage));
-            this.Register<HousingMemberInfoMessage>(new Action<HousingMemberInfoMessage, object>(PrintHousingMemberInfoMessage));
-            this.Register<HousingKickMessage>(new Action<HousingKickMessage, object>(PrintHousingKickMessage));
-            this.Register<HousingInvitedMessage>(new Action<HousingInvitedMessage, object>(PrintHousingInvitedMessage));
-            this.Register<HousingHostRestartingMessage>(new Action<HousingHostRestartingMessage, object>(PrintHousingHostRestartingMessage));
-            this.Register<EnterHousingMessage>(new Action<EnterHousingMessage, object>(PrintEnterHousingMessage));
-            this.Register<EndPendingDialogMessage>(new Action<EndPendingDialogMessage, object>(PrintEndPendingDialogMessage));
-            this.Register<CreateHousingMessage>(new Action<CreateHousingMessage, object>(PrintCreateHousingMessage));
-            this.Register<HotSpringRequestPotionEffectMessage>(new Action<HotSpringRequestPotionEffectMessage, object>(PrintHotSpringRequestPotionEffectMessage));
-            this.Register<HotSpringAddPotionMessage>(new Action<HotSpringAddPotionMessage, object>(PrintHotSpringAddPotionMessage));
-            this.Register<BurnItemsMessage>(new Action<BurnItemsMessage, object>(PrintBurnItemsMessage));
-            this.Register<FreeTitleNameCheckMessage>(new Action<FreeTitleNameCheckMessage, object>(PrintFreeTitleNameCheckMessage));
-            this.Register<BurnRewardItemsMessage>(new Action<BurnRewardItemsMessage, object>(PrintBurnRewardItemsMessage));
-            this.Register<AllUserGoalEventModifyMessage>(new Action<AllUserGoalEventModifyMessage, object>(PrintAllUserGoalEventModifyMessage));
-            this.Register<AvatarSynthesisItemMessage>(new Action<AvatarSynthesisItemMessage, object>(PrintAvatarSynthesisItemMessage));
-            this.Register<GetFriendshipPointMessage>(new Action<GetFriendshipPointMessage, object>(PrintGetFriendshipPointMessage));
-            this.Register<ExchangeMileageMessage>(new Action<ExchangeMileageMessage, object>(PrintExchangeMileageMessage));
-            this.Register<CaptchaResponseMessage>(new Action<CaptchaResponseMessage, object>(PrintCaptchaResponseMessage));
-            this.Register<GuildChatMessage>(new Action<GuildChatMessage, object>(PrintGuildChatMessage));
-            this.Register<ChangeMasterMessage>(new Action<ChangeMasterMessage, object>(PrintChangeMasterMessage));
-            this.Register<GuildGainGPMessage>(new Action<GuildGainGPMessage, object>(PrintGuildGainGPMessage));
-            this.Register<GuildLevelUpMessage>(new Action<GuildLevelUpMessage, object>(PrintGuildLevelUpMessage));
-            this.Register<HousingRoomListMessage>(new Action<HousingRoomListMessage, object>(PrintHousingRoomListMessage));
-            this.Register<HotSpringRequestInfoResultMessage>(new Action<HotSpringRequestInfoResultMessage, object>(PrintHotSpringRequestInfoResultMessage));
-            this.Register<BurnJackpotMessage>(new Action<BurnJackpotMessage, object>(PrintBurnJackpotMessage));
-            this.Register<RequestMarbleCastDiceMessage>(new Action<RequestMarbleCastDiceMessage, object>(PrintRequestMarbleCastDiceMessage));
-            this.Register<HousingPartyInfoMessage>(new Action<HousingPartyInfoMessage, object>(PrintHousingPartyInfoMessage));
-            this.Register<AddFriendShipResultMessage>(new Action<AddFriendShipResultMessage, object>(PrintAddFriendShipResultMessage));
-            this.Register<HousingInvitationRejectMessage>(new Action<HousingInvitationRejectMessage, object>(PrintHousingInvitationRejectMessage));
-            this.Register<EnhanceSuccessRatioDebugMessage>(new Action<EnhanceSuccessRatioDebugMessage, object>(PrintEnhanceSuccessRatioDebugMessage));
-            this.Register<HasSecondPasswordMessage>(new Action<HasSecondPasswordMessage, object>(PrintHasSecondPasswordMessage));
-            this.Register<GetUserIDMessage>(new Action<GetUserIDMessage, object>(PrintGetUserIDMessage));
-            this.Register<MakeNamedRingMessage>(new Action<MakeNamedRingMessage, object>(PrintMakeNamedRingMessage));
-            this.Register<MarbleInfoResultMessage>(new Action<MarbleInfoResultMessage, object>(PrintMarbleInfoResultMessage));
-            this.Register<RequestPartChangingMessage>(new Action<RequestPartChangingMessage, object>(PrintRequestPartChangingMessage));
-            this.Register<CaptchaResponseResultMessage>(new Action<CaptchaResponseResultMessage, object>(PrintCaptchaResponseResultMessage));
-            this.Register<JoinGuildChatRoomMessage>(new Action<JoinGuildChatRoomMessage, object>(PrintJoinGuildChatRoomMessage));
-            this.Register<HousingListMessage>(new Action<HousingListMessage, object>(PrintHousingListMessage));
-            this.Register<AvatarSynthesisMaterialRecipesMessage>(new Action<AvatarSynthesisMaterialRecipesMessage, object>(PrintAvatarSynthesisMaterialRecipesMessage));
-            this.Register<AvatarSynthesisRequestMessage>(new Action<AvatarSynthesisRequestMessage, object>(PrintAvatarSynthesisRequestMessage));
-            this.Register<GameResourceRespondMessage>(new Action<GameResourceRespondMessage, object>(PrintGameResourceRespondMessage));
-            this.Register<AllUserGoalEventMessage>(new Action<AllUserGoalEventMessage, object>(PrintAllUserGoalEventMessage));
-            this.Register<LeaveHousingMessage>(new Action<LeaveHousingMessage, object>(PrintLeaveHousingMessage));
-            this.Register<DecomposeItemResultMessage>(new Action<DecomposeItemResultMessage, object>(PrintDecomposeItemResultMessage));
-            this.Register<QueryAvatarSynthesisMaterialRecipesMessage>(new Action<QueryAvatarSynthesisMaterialRecipesMessage, object>(PrintQueryAvatarSynthesisMaterialRecipesMessage));
-            this.Register<SearchHousingRoomMessage>(new Action<SearchHousingRoomMessage, object>(PrintSearchHousingRoomMessage));
-            this.Register<MarbleSetTimerMessage>(new Action<MarbleSetTimerMessage, object>(PrintMarbleSetTimerMessage));
-            this.Register<FreeTitleNameCheckResultMessage>(new Action<FreeTitleNameCheckResultMessage, object>(PrintFreeTitleNameCheckResultMessage));
-            this.Register<InsertBlessStoneCompleteMessage>(new Action<InsertBlessStoneCompleteMessage, object>(PrintInsertBlessStoneCompleteMessage));
-            this.Register<EnchantLimitlessMessage>(new Action<EnchantLimitlessMessage, object>(PrintEnchantLimitlessMessage));
-            this.Register<RequestBraceletCombinationMessage>(new Action<RequestBraceletCombinationMessage, object>(PrintRequestBraceletCombinationMessage));
-            this.Register<SwapHousingItemMessage>(new Action<SwapHousingItemMessage, object>(PrintSwapHousingItemMessage));
-            this.Register<MarbleProcessNodeResultMessage>(new Action<MarbleProcessNodeResultMessage, object>(PrintMarbleProcessNodeResultMessage));
-            this.Register<BurnGaugeRequestMessage>(new Action<BurnGaugeRequestMessage, object>(PrintBurnGaugeRequestMessage));
-            this.Register<SetQuoteMessage>(new Action<SetQuoteMessage, object>(PrintSetQuoteMessage));
-            this.Register<RequestAttendanceRewardMessage>(new Action<RequestAttendanceRewardMessage, object>(PrintRequestAttendanceRewardMessage));
-            this.Register<HousingGameHostedMessage>(new Action<HousingGameHostedMessage, object>(PrintHousingGameHostedMessage));
-            this.Register<HousingKickedMessage>(new Action<HousingKickedMessage, object>(PrintHousingKickedMessage));
-            this.Register<RequestAddPeerMessage>(new Action<RequestAddPeerMessage, object>(PrintRequestAddPeerMessage));
-            this.Register<MaxDurabilityRepairItemMessage>(new Action<MaxDurabilityRepairItemMessage, object>(PrintMaxDurabilityRepairItemMessage));
-            this.Register<SecondPasswordResultMessage>(new Action<SecondPasswordResultMessage, object>(PrintSecondPasswordResultMessage));
-            this.Register<CharacterCommonInfoMessage>(new Action<CharacterCommonInfoMessage, object>(PrintCharacterCommonInfoMessage));
-            this.Register<ChannelServerAddress>(new Action<ChannelServerAddress, object>(PrintChannelServerAddress));
-            this.Register<SystemMessage>(new Action<SystemMessage, object>(PrintSystemMessage));
-            this.Register<NpcTalkMessage>(new Action<NpcTalkMessage, object>(PrintNpcTalkMessage));
-            this.Register<HousingStartGrantedMessage>(new Action<HousingStartGrantedMessage, object>(PrintHousingStartGrantedMessage));
-            this.Register<UpdateStoryGuideMessage>(new Action<UpdateStoryGuideMessage, object>(PrintUpdateStoryGuideMessage));
-            this.Register<AddFriendshipInfoMessage>(new Action<AddFriendshipInfoMessage, object>(PrintAddFriendshipInfoMessage));
-            this.Register<SkillListMessage>(new Action<SkillListMessage, object>(PrintSkillListMessage));
-            this.Register<LoginOkMessage>(new Action<LoginOkMessage, object>(PrintLoginOkMessage));
-            this.Register<MailListMessage>(new Action<MailListMessage, object>(PrintMailListMessage));
-            this.Register<TodayMissionInitializeMessage>(new Action<TodayMissionInitializeMessage, object>(PrintTodayMissionInitializeMessage));
-            this.Register<APMessage>(new Action<APMessage, object>(PrintAPMessage));
-            this.Register<GuildResultMessage>(new Action<GuildResultMessage, object>(PrintGuildResultMessage));
-            this.Register<CostumeUpdateMessage>(new Action<CostumeUpdateMessage, object>(PrintCostumeUpdateMessage));
-            this.Register<EquipmentInfoMessage>(new Action<EquipmentInfoMessage, object>(PrintEquipmentInfoMessage));
-            this.Register<UpdateStatMessage>(new Action<UpdateStatMessage, object>(PrintUpdateStatMessage));
-            this.Register<UpdateInventoryInfoMessage>(new Action<UpdateInventoryInfoMessage, object>(PrintUpdateInventoryInfoMessage));
-            this.Register<StatusEffectUpdated>(new Action<StatusEffectUpdated, object>(PrintStatusEffectUpdated));
-            this.Register<QuestProgressMessage>(new Action<QuestProgressMessage, object>(PrintQuestProgressMessage));
-            this.Register<FriendshipInfoListMessage>(new Action<FriendshipInfoListMessage, object>(PrintFriendshipInfoListMessage));
-            this.Register<NpcListMessage>(new Action<NpcListMessage, object>(PrintNpcListMessage));
-            this.Register<TradeSearchResult>(new Action<TradeSearchResult, object>(PrintTradeSearchResult));
-            this.Register<InventoryInfoMessage>(new Action<InventoryInfoMessage, object>(PrintInventoryInfoMessage));
-            this.Register<AskSecondPasswordMessage>(new Action<AskSecondPasswordMessage, object>(PrintAskSecondPasswordMessage));
-            this.Register<NoticeGameEnvironmentMessage>(new Action<NoticeGameEnvironmentMessage, object>(PrintNoticeGameEnvironmentMessage));
-            this.Register<SpSkillMessage>(new Action<SpSkillMessage, object>(PrintSpSkillMessage));
-            this.Register<VocationSkillListMessage>(new Action<VocationSkillListMessage, object>(PrintVocationSkillListMessage));
-            this.Register<WhisperFilterListMessage>(new Action<WhisperFilterListMessage, object>(PrintWhisperFilterListMessage));
-            this.Register<GetCharacterMissionStatusMessage>(new Action<GetCharacterMissionStatusMessage, object>(PrintGetCharacterMissionStatusMessage));
-            this.Register<SelectPatternMessage>(new Action<SelectPatternMessage, object>(PrintSelectPatternMessage));
-            this.Register<QueryHousingItemsMessage>(new Action<QueryHousingItemsMessage, object>(PrintQueryHousingItemsMessage));
-            this.Register<TitleListMessage>(new Action<TitleListMessage, object>(PrintTitleListMessage));
-            this.Register<FishingResultMessage>(new Action<FishingResultMessage, object>(PrintFishingResultMessage));
-            this.Register<PetListMessage>(new Action<PetListMessage, object>(PrintPetListMessage));
-            this.Register<PetFeedListMessage>(new Action<PetFeedListMessage, object>(PrintPetFeedListMessage));
-            this.Register<SharedInventoryInfoMessage>(new Action<SharedInventoryInfoMessage, object>(PrintSharedInventoryInfoMessage));
-            this.Register<TirCoinInfoMessage>(new Action<TirCoinInfoMessage, object>(PrintTirCoinInfoMessage));
-            this.Register<RankAlarmInfoMessage>(new Action<RankAlarmInfoMessage, object>(PrintRankAlarmInfoMessage));
-            this.Register<UpdateBattleInventoryInTownMessage>(new Action<UpdateBattleInventoryInTownMessage, object>(PrintUpdateBattleInventoryInTownMessage));
-            this.Register<BingoBoardResultMessage>(new Action<BingoBoardResultMessage, object>(PrintBingoBoardResultMessage));
-            this.Register<RandomRankInfoMessage>(new Action<RandomRankInfoMessage, object>(PrintRandomRankInfoMessage));
-            this.Register<JoinHousingMessage>(new Action<JoinHousingMessage, object>(PrintJoinHousingMessage));
-            this.Register<AttendanceInfoMessage>(new Action<AttendanceInfoMessage, object>(PrintAttendanceInfoMessage));
-            this.Register<UpdateTitleMessage>(new Action<UpdateTitleMessage, object>(PrintUpdateTitleMessage));
-            this.Register<GuildInventoryInfoMessage>(new Action<GuildInventoryInfoMessage, object>(PrintGuildInventoryInfoMessage));
-            this.Register<CashshopTirCoinResultMessage>(new Action<CashshopTirCoinResultMessage, object>(PrintCashshopTirCoinResultMessage));
-            this.Register<GiveCashShopDiscountCouponMessage>(new Action<GiveCashShopDiscountCouponMessage, object>(PrintGiveCashShopDiscountCouponMessage));
-            this.Register<NextSectorMessage>(new Action<NextSectorMessage, object>(PrintNextSectorMessage));
-            this.Register<BurnGauge>(new Action<BurnGauge, object>(PrintBurnGauge));
-            this.Register<StoryLinesMessage>(new Action<StoryLinesMessage, object>(PrintStoryLinesMessage));
-            this.Register<QuickSlotInfoMessage>(new Action<QuickSlotInfoMessage, object>(PrintQuickSlotInfoMessage));
-            this.Register<ManufactureInfoMessage>(new Action<ManufactureInfoMessage, object>(PrintManufactureInfoMessage));
-            this.Register<GuildInfoMessage>(new Action<GuildInfoMessage, object>(PrintGuildInfoMessage));
-            this.Register<NotifyLook>(new Action<NotifyLook, object>(PrintNotifyLook));
-            this.Register<NotifyAction>(new Action<NotifyAction, object>(PrintNotifyAction));
-            this.Register<Disappeared>(new Action<Disappeared, object>(PrintDisappeared));
-            this.Register<UserLoginMessage>(new Action<UserLoginMessage, object>(PrintUserLoginMessage));
-            this.Register<QueryCashShopProductListMessage>(new Action<QueryCashShopProductListMessage, object>(PrintQueryCashShopProductListMessage));
-            this.Register<QueryCashShopBalanceMessage>(new Action<QueryCashShopBalanceMessage, object>(PrintQueryCashShopBalanceMessage));
-            //this.Register<>(new Action<, object>(Print));
-            //this.Register<>(new Action<, object>(Print));
-            //this.Register<>(new Action<, object>(Print));
-            //this.Register<>(new Action<, object>(Print));
-            //this.Register<>(new Action<, object>(Print));
-            //this.Register<>(new Action<, object>(Print));
-            //this.Register<>(new Action<, object>(Print));
-
+            
+            foreach (MethodInfo m in typeof(MessagePrinter).GetMethods(BindingFlags.NonPublic|BindingFlags.Static)) {
+                if (m.Name.StartsWith("Print")) {
+                    RegisterGeneric(m);
+                }
+                else
+                {
+                    //Console.WriteLine("Not registering method {0}",m.Name);
+                }
+            }
         }
+
+        private void RegisterGeneric(MethodInfo m)
+        {
+            ParameterInfo[] paramList = m.GetParameters();
+            /*Console.Write("Registering {0}(",m.Name);
+            foreach (ParameterInfo info in paramList) {
+                
+                Console.Write("{0} {1}, ", info.ParameterType.Name, info.Name);
+            }
+            Console.WriteLine(")");
+            */
+            Type msgType = m.GetParameters()[0].ParameterType;//...Message Type
+            Type[] typeArgs = {msgType, typeof(object)};
+            Type generic = typeof(Action<,>);
+            Type t = generic.MakeGenericType(typeArgs);//Action<...Message,object> Type
+
+            MethodInfo register = typeof(MessagePrinter).GetMethod("Register", BindingFlags.NonPublic | BindingFlags.Instance);
+            Delegate d = CreateDelegate(m);
+            MethodInfo regGen = register.MakeGenericMethod(msgType);
+            regGen.Invoke(this,new object[] {d});
+        }
+
+        static Delegate CreateDelegate(MethodInfo method)
+        {
+            if (method == null)
+            {
+                throw new ArgumentNullException("method");
+            }
+
+            if (!method.IsStatic)
+            {
+                throw new ArgumentException("The provided method must be static.", "method");
+            }
+
+            if (method.IsGenericMethod)
+            {
+                throw new ArgumentException("The provided method must not be generic.", "method");
+            }
+
+            return method.CreateDelegate(Expression.GetDelegateType(
+                (from parameter in method.GetParameters() select parameter.ParameterType)
+                .Concat(new[] { method.ReturnType })
+                .ToArray()));
+        }
+
         private void Register<T>(Action<T,object> printer) {
             if (categoryDict.ContainsKey(typeof(T).GUID)) {
                 mf.Register<T>(printer,categoryDict[typeof(T).GUID]);
@@ -1280,6 +1196,19 @@ namespace PacketCap
 
         private static void PrintQueryCashShopBalanceMessage(QueryCashShopBalanceMessage msg, object tag) {
             Console.WriteLine("QueryCashShopBalanceMessage: []");
+        }
+
+        private static void PrintSecondPasswordMessage(SecondPasswordMessage msg, object tag) {
+            //TODO: hide
+            Console.WriteLine(msg.ToString());
+        }
+
+        private static void PrintSelectCharacterMessage(SelectCharacterMessage msg, object tag) {
+            Console.WriteLine(msg.ToString());
+        }
+
+        private static void PrintClientLogMessage(ClientLogMessage msg, object tag) {
+            Console.WriteLine(msg.ToString());
         }
     }
 }
