@@ -17,25 +17,25 @@ namespace PacketCap
         private LinkedList<int> recvSize = new LinkedList<int>();
 
         private Dictionary<int, String> classNames = new Dictionary<int, String>();
-        private Dictionary<int, Guid> getGuid = new Dictionary<int, Guid>();
+        public Dictionary<int, Guid> getGuid = new Dictionary<int, Guid>();
 
         private ICryptoTransform ct = null;
 
 
-        MessageHandlerFactory mf = new  MessageHandlerFactory();
-        MessagePrinter mp = new MessagePrinter();
+        private MessageHandlerFactory mf = new  MessageHandlerFactory();
+        private MessagePrinter mp = new MessagePrinter();
         
         internal bool sawSyn { get; private set; }
         
         private bool encrypt;
 
-        private bool first = true;
+        private static Dictionary<string, PacketCap> portHandler = new Dictionary<string, PacketCap>();
 
-        private static Dictionary<uint, PacketCap> portHandler = new Dictionary<uint, PacketCap>();
+        private static string myIp = "";
 
         static int Main(string[] args)
         {
-            string filter = "src host 192.168.0.200 and tcp src portrange 27000-27015";
+            string filter = "host 192.168.0.200 and tcp portrange 27000-27015";
             /*if (args.Length != 0) {
                 ChannelProcessor.Main(null);
             }*/
@@ -66,31 +66,26 @@ namespace PacketCap
         }
         private static void HandlePacketPort(PcapDotNet.Packets.Packet packet)
         {
-            uint srcPort = ((uint)packet.Buffer[34] << 8) | (uint)packet.Buffer[35];
+            string connString = getConnString(packet.Buffer);
             PacketCap cap;
-            if (portHandler.TryGetValue(srcPort, out cap))
+            if (portHandler.TryGetValue(connString, out cap))
             {
-                cap.HandlePacket(packet);
+                cap.HandlePacket(packet,connString);
             }
             else {
                 cap = new PacketCap();
-                portHandler.Add(srcPort, cap);
-                Console.WriteLine("Creating PacketCap for port {0}", srcPort);
-                cap.HandlePacket(packet);
+                portHandler.Add(connString, cap);
+                Console.WriteLine("Creating PacketCap for connection {0}", connString);
+                cap.HandlePacket(packet,connString);
             }
         }
 
 
-        private void HandlePacket(PcapDotNet.Packets.Packet packet) {
+        private void HandlePacket(PcapDotNet.Packets.Packet packet,String connString) {
 
             uint srcPort = ((uint)packet.Buffer[34] << 8) | (uint)packet.Buffer[35];
-            uint dstPort = ((uint)packet.Buffer[36] << 8) | (uint)packet.Buffer[37];
-
             String srcIp = BytesToIpAddr(packet.Buffer, 26);
-            String dstIp = BytesToIpAddr(packet.Buffer, 30);
 
-            String src = String.Format("{0}:{1}", srcIp, srcPort);
-            String dst = String.Format("{0}:{1}", dstIp, dstPort);
             int tcpStart = 34;
 
             //strip tcp header
@@ -113,18 +108,18 @@ namespace PacketCap
             }
             else if (!sawSyn)
             {
-                Console.WriteLine("Haven't seen SYN yet from port {0}", srcPort);
+                Console.WriteLine("Haven't seen SYN yet from {0}", srcPort);
                 return;
             }
             
             if (dataBytes == 6 || dataBytes == 0) {
-                Console.WriteLine("Ping from port {0}",srcPort);
+                //Console.WriteLine("Ping from port {0}",srcPort);
                 ClearBuffer();
                 return;
             }
 
-            //String timestamp = packet.Timestamp.ToString("yyyy-MM-dd hh:mm:ss.fff");
-            //Console.WriteLine("{0}: {1}->{2} bytes={3}",timestamp,src,dst,dataBytes);
+            String timestamp = packet.Timestamp.ToString("yyyy-MM-dd hh:mm:ss.fff");
+            Console.WriteLine("{0}: {1} bytes={2}",timestamp,connString,dataBytes);
             
             recvSize.AddLast(dataBytes);
             Buffer.BlockCopy(packet.Buffer, dataStart, buffer, bufLen, dataBytes);
@@ -149,7 +144,7 @@ namespace PacketCap
                     if (pLen == 0)
                     {
                         ClearBuffer();
-                        Console.WriteLine("Received ping");
+                        //Console.WriteLine("Received ping");
                         return;
                     }
                     else
@@ -191,21 +186,25 @@ namespace PacketCap
                 p = new Devcat.Core.Net.Message.Packet(dataSeg);
                 try
                 {
-                    Console.WriteLine(p);
-                    
-                    if (first)
+                    //Console.WriteLine(p);
+                    if (srcIp == myIp)
                     {
-                        first = false;
-                        Object obj;
-                        SerializeReader.FromBinary<Object>(p, out obj);
-                        SetupDicts(obj.ToString());
-                        mf.Handle(p, "hello");
-                        mp.registerPrinters(mf, getGuid);
-                        Console.WriteLine("Received TypeConverer");
+                        Console.WriteLine("Client:");
+                    }
+                    else {
+                        Console.WriteLine("Server:");
+                    }
+                    if (classNames.Count == 0)
+                    {
+                        processTypeConverter(p);
+                        Console.WriteLine("Received TypeConverter");
+                        String reverse = reverseConnString(connString);
+                        Console.WriteLine("Sending TypeConverter to Client {0}",reverse);
+                        portHandler[reverse].processTypeConverter(p);
                     }
                     else
                     {
-                        mf.Handle(p, "hello");
+                        mf.Handle(p, null);
                     }
 
                     ShortenBuffer(pLen);
@@ -239,7 +238,7 @@ namespace PacketCap
                 }
                 catch (System.ArgumentException e)
                 {
-                    Console.WriteLine("Serializing failed bacause a dict was made with 2 identical keys: {0}", e.Message);
+                    Console.WriteLine("Serializing failed bacause a dict was made with 2 identical keys: {0}", e.StackTrace);
                     ClearBuffer();
                 }
             }
@@ -273,6 +272,39 @@ namespace PacketCap
             }
         }
 
+        public void processTypeConverter(Devcat.Core.Net.Message.Packet p) {
+            SerializeReader.FromBinary<Object>(p, out Object obj);
+            SetupDicts(obj.ToString());
+            mf.Handle(p, null);
+            mp.registerPrinters(mf, getGuid);
+        }
+
+        private static String reverseConnString(String connString) {
+            String[] parts = connString.Split(' ');
+            StringBuilder sb = new StringBuilder();
+            //'IP:Port','to','IP:port'
+            sb.Append(parts[2]);
+            sb.Append(" to ");
+            sb.Append(parts[0]);
+            return sb.ToString();
+        }
+
+        private static string getConnString(byte[] Buffer) {
+            uint srcPort = ((uint)Buffer[34] << 8) | (uint)Buffer[35];
+            uint dstPort = ((uint)Buffer[36] << 8) | (uint)Buffer[37];
+            String srcIp = BytesToIpAddr(Buffer, 26);
+            String dstIp = BytesToIpAddr(Buffer, 30);
+            StringBuilder sb = new StringBuilder();
+            sb.Append(srcIp);
+            sb.Append(":");
+            sb.Append(srcPort);
+            sb.Append(" to ");
+            sb.Append(dstIp);
+            sb.Append(":");
+            sb.Append(dstPort);
+            return sb.ToString();
+        }
+
         private void ClearBuffer() {
             bufLen = 0;
             recvSize.Clear();
@@ -303,12 +335,13 @@ namespace PacketCap
         }
 
         private bool anySynSeen() {
-            foreach (KeyValuePair<uint,PacketCap> entry in portHandler) {
+            int numSyn = 0;
+            foreach (KeyValuePair<string,PacketCap> entry in portHandler) {
                 if (entry.Value.sawSyn) {
-                    return true;
+                    numSyn++;
                 }
             }
-            return false;
+            return numSyn > 1;
         }
 
         private void SetupDicts(String contents)
@@ -342,6 +375,7 @@ namespace PacketCap
                     if (addr.Address.ToString().Contains("Internet 192.168.0"))
                     {
                         Console.WriteLine("Found device with IP " + addr.Address);
+                        myIp = addr.Address.ToString().Split(' ')[1];
                         return device;
                     }
                 }

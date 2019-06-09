@@ -151,6 +151,16 @@ namespace PacketCap
             this.Register<QuickSlotInfoMessage>(new Action<QuickSlotInfoMessage, object>(PrintQuickSlotInfoMessage));
             this.Register<ManufactureInfoMessage>(new Action<ManufactureInfoMessage, object>(PrintManufactureInfoMessage));
             this.Register<GuildInfoMessage>(new Action<GuildInfoMessage, object>(PrintGuildInfoMessage));
+            this.Register<NotifyLook>(new Action<NotifyLook, object>(PrintNotifyLook));
+            this.Register<NotifyAction>(new Action<NotifyAction, object>(PrintNotifyAction));
+            this.Register<Disappeared>(new Action<Disappeared, object>(PrintDisappeared));
+            this.Register<UserLoginMessage>(new Action<UserLoginMessage, object>(PrintUserLoginMessage));
+            this.Register<QueryCashShopProductListMessage>(new Action<QueryCashShopProductListMessage, object>(PrintQueryCashShopProductListMessage));
+            this.Register<QueryCashShopBalanceMessage>(new Action<QueryCashShopBalanceMessage, object>(PrintQueryCashShopBalanceMessage));
+            //this.Register<>(new Action<, object>(Print));
+            //this.Register<>(new Action<, object>(Print));
+            //this.Register<>(new Action<, object>(Print));
+            //this.Register<>(new Action<, object>(Print));
             //this.Register<>(new Action<, object>(Print));
             //this.Register<>(new Action<, object>(Print));
             //this.Register<>(new Action<, object>(Print));
@@ -861,27 +871,34 @@ namespace PacketCap
             return sb.ToString();
         }
 
-        private static void PrintCharacterCommonInfoMessage(CharacterCommonInfoMessage msg, object tag) {
-            CharacterSummary c = msg.Info;
-            Console.WriteLine("CharacterCommonInfoMessage:");
-            Console.WriteLine("\tCharacterID={0}",c.CharacterID);
+        private static string CharacterSummaryToString(CharacterSummary c, string name, int numTabs) {
+            StringBuilder sb = new StringBuilder();
+            String t = new string('\t', numTabs);
+            sb.AppendFormat("{0}:",name);
+            sb.AppendFormat("{1}CharacterID={0}", c.CharacterID,t);
             String basechar = BaseCharacterToString(c.BaseCharacter);
-            Console.WriteLine("\tBaseCharacter={0}",basechar);
-            Console.WriteLine("\tLevel={0}",c.Level);
-            Console.WriteLine("\tTitle={0}",c.Title);
-            Console.WriteLine("\tTitleCount={0}",c.TitleCount);
-            Console.WriteLine(CostumeInfoToString(c.Costume,1));
-            
+            sb.AppendFormat("{1}BaseCharacter={0}", basechar,t);
+            sb.AppendFormat("{1}Level={0}", c.Level,t);
+            sb.AppendFormat("{1}Title={0}", c.Title,t);
+            sb.AppendFormat("{1}TitleCount={0}", c.TitleCount,t);
+            sb.AppendFormat(CostumeInfoToString(c.Costume, numTabs));
 
-            Console.WriteLine("\tQuote={0}",c.Quote);
-            Console.WriteLine("\tGuildName={0}",c.GuildName);
+
+            sb.AppendFormat("{1}Quote={0}", c.Quote,t);
+            sb.AppendFormat("{1}GuildName={0}", c.GuildName,t);
             String v = VocationToString(c.VocationClass);
-            Console.WriteLine("\tVocation={0}",v);
+            sb.AppendFormat("{1}Vocation={0}", v,t);
             if (c.Pet != null)
             {
-                Console.WriteLine("\tPet: Name={1}, Type={2}", c.Pet.PetName, c.Pet.PetType);
+                sb.AppendFormat("{0}Pet: Name={1}, Type={2}", t, c.Pet.PetName, c.Pet.PetType);
             }
-            Console.WriteLine("\tFreeTitleName={0}",c.FreeTitleName);
+            sb.AppendFormat("{1}FreeTitleName={0}", c.FreeTitleName, t);
+            return sb.ToString();
+        }
+
+        private static void PrintCharacterCommonInfoMessage(CharacterCommonInfoMessage msg, object tag) {
+            CharacterSummary c = msg.Info;
+            Console.WriteLine(CharacterSummaryToString(msg.Info, "CharacterCommonInfoMessage", 0));
         }
 
         private static void PrintChannelServerAddress(ChannelServerAddress msg, object tag) {
@@ -1217,6 +1234,52 @@ namespace PacketCap
         private static void PrintGuildInfoMessage(GuildInfoMessage msg, object tag) {
             //TODO: db connect
             Console.WriteLine(msg.ToString());
+        }
+
+        private static void PrintNotifyLook(NotifyLook msg, object tag) {
+            //TODO: db connect
+            Console.WriteLine("NotifyLook:");
+            Console.WriteLine("\tID={0}", msg.ID);
+            Console.WriteLine(CharacterSummaryToString(msg.Look, "Look", 1));
+        }
+
+        private static void PrintNotifyAction(NotifyAction msg, object tag) {
+            Console.WriteLine("NotifyAction:");
+            Console.WriteLine("\tID={0}",msg.ID);
+            Console.WriteLine("\tAction:");
+            ActionSync a = msg.Action;
+            Console.WriteLine("\t\tPosition=({0},{1},{2})", a.Position.X, a.Position.Y, a.Position.Z);
+            Console.WriteLine("\t\tVelocity=({0},{1},{2})", a.Velocity.X, a.Velocity.Y, a.Velocity.Z);
+            Console.WriteLine("\t\tYaw={0}", a.Yaw);
+            Console.WriteLine("\t\tSequence={0}",a.Sequence);
+            Console.WriteLine("\t\tActionStateIndex={0}",a.ActionStateIndex);
+            Console.WriteLine("\tStartTime={0}",a.StartTime);
+            Console.WriteLine("\tState={0}", a.State);
+        }
+
+        private static void PrintDisappeared(Disappeared msg, object tag) {
+            Console.WriteLine("Disappeared: ID={0}",msg.ID);
+        }
+
+        private static void PrintUserLoginMessage(UserLoginMessage msg, object tag) {
+            Console.WriteLine("UserLoginMessage:");
+            Console.WriteLine("\tPassport={0}",msg.Passport);
+            Console.WriteLine("\tLocalAddress={0}",msg.LocalAddress);
+            Console.WriteLine("\thwID={0}",msg.hwID);
+            Console.WriteLine("\tMachineID=[{0}]",String.Join(",",msg.MachineID));
+            Console.WriteLine("\tGameRoomClient={0}",msg.GameRoomClient);
+            Console.WriteLine("\tIsCharacterSelectSkipped={0}",msg.IsCharacterSelectSkipped);
+            Console.WriteLine("\tNexonID={0}",msg.NexonID);
+            Console.WriteLine("\tUpToDateInfo={0}",msg.UpToDateInfo);
+            Console.WriteLine("\tCheckSum={0}",msg.CheckSum);
+        }
+
+        private static void PrintQueryCashShopProductListMessage(QueryCashShopProductListMessage msg, object tag) {
+            Console.WriteLine("QueryCashShopProductListMessage: []");
+        }
+
+        private static void PrintQueryCashShopBalanceMessage(QueryCashShopBalanceMessage msg, object tag) {
+            Console.WriteLine("QueryCashShopBalanceMessage: []");
         }
     }
 }

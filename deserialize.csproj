@@ -115,7 +115,6 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ChannelProcessor.cs" />
     <Compile Include="ClassInfoFixed.cs" />
     <Compile Include="MessagePrinter.cs" />
     <Compile Include="PacketCap.cs" />
