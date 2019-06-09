@@ -9,26 +9,36 @@ using System.Text;
 
 namespace PacketCap
 {
-    class Program
+    class PacketCap
     {
-        private static byte[] buffer = new byte[66000];
-        private static byte[] newbuffer = new byte[66000];
-        private static int bufLen = 0;
-        private static LinkedList<int> recvSize = new LinkedList<int>();
+        private byte[] buffer = new byte[66000];
+        private byte[] newbuffer = new byte[66000];
+        private int bufLen = 0;
+        private LinkedList<int> recvSize = new LinkedList<int>();
 
-        private static Dictionary<int, String> classNames = new Dictionary<int, String>();
-        private static Dictionary<int, Guid> getGuid = new Dictionary<int, Guid>();
-        private static ICryptoTransform ct = new ServiceCore.CryptoTransformHeroes();
-        private static bool first = true;
-        private static MessageHandlerFactory mf = new MessageHandlerFactory();
-        private static MessagePrinter mp = new MessagePrinter();
+        private Dictionary<int, String> classNames = new Dictionary<int, String>();
+        private Dictionary<int, Guid> getGuid = new Dictionary<int, Guid>();
 
-        private static DateTime last = new DateTime();
+        private ICryptoTransform ct = null;
 
-        private static bool sawSyn = false;
 
-        static void Main(string[] args)
+        MessageHandlerFactory mf = new  MessageHandlerFactory();
+        MessagePrinter mp = new MessagePrinter();
+        
+        internal bool sawSyn { get; private set; }
+        
+        private bool encrypt;
+
+        private bool first = true;
+
+        private static Dictionary<uint, PacketCap> portHandler = new Dictionary<uint, PacketCap>();
+
+        static int Main(string[] args)
         {
+            string filter = "src host 192.168.0.200 and tcp src portrange 27000-27015";
+            /*if (args.Length != 0) {
+                ChannelProcessor.Main(null);
+            }*/
             PacketDevice selectedDevice = getDevice();
 
             // Open the device
@@ -39,46 +49,40 @@ namespace PacketCap
                                     1000))                                  // read timeout
             {
                 Console.WriteLine("Waiting for TCP stream to start on {0}", selectedDevice.Description);
-                communicator.SetFilter("src host 192.168.0.200 and tcp src portrange 27000-27015");
+                //communicator.SetFilter("src host 192.168.0.200 and tcp src portrange 27000-27015");
+                communicator.SetFilter(filter);
                 // Retrieve the packets
-                PcapDotNet.Packets.Packet packet;
-                
-                do
-                {
-                    PacketCommunicatorReceiveResult result = communicator.ReceivePacket(out packet);
-                    
+
+                do {
+                    PacketCommunicatorReceiveResult result = communicator.ReceivePacket(out PcapDotNet.Packets.Packet packet);
+
                     if (result != PacketCommunicatorReceiveResult.Ok) {
                         continue;
                     }
-                    HandlePacket(packet);
-                    
-                    
+                    HandlePacketPort(packet);
+
                 } while (true);
             }
         }
+        private static void HandlePacketPort(PcapDotNet.Packets.Packet packet)
+        {
+            uint srcPort = ((uint)packet.Buffer[34] << 8) | (uint)packet.Buffer[35];
+            PacketCap cap;
+            if (portHandler.TryGetValue(srcPort, out cap))
+            {
+                cap.HandlePacket(packet);
+            }
+            else {
+                cap = new PacketCap();
+                portHandler.Add(srcPort, cap);
+                Console.WriteLine("Creating PacketCap for port {0}", srcPort);
+                cap.HandlePacket(packet);
+            }
+        }
 
-        private static void HandlePacket(PcapDotNet.Packets.Packet packet) {
-            bool syn = (packet.Buffer[47] & 0b10) == 0b10;
-            if (syn)
-            {
-                ct = new ServiceCore.CryptoTransformHeroes();
-                Console.WriteLine("TCP connection starting");
-                ClearBuffer();
-                sawSyn = true;
-                return;
-            }
-            else if (!sawSyn) {
-                return;
-            }
-            
-            //clear the buffer if no messages for the last second
-            DateTime now = new DateTime();
-            if (now.Subtract(last).TotalSeconds > 1)
-            {
-                ClearBuffer();
-                Console.WriteLine("Cleared buffer");
-            }
-            last = now;
+
+        private void HandlePacket(PcapDotNet.Packets.Packet packet) {
+
             uint srcPort = ((uint)packet.Buffer[34] << 8) | (uint)packet.Buffer[35];
             uint dstPort = ((uint)packet.Buffer[36] << 8) | (uint)packet.Buffer[37];
 
@@ -88,9 +92,6 @@ namespace PacketCap
             String src = String.Format("{0}:{1}", srcIp, srcPort);
             String dst = String.Format("{0}:{1}", dstIp, dstPort);
             int tcpStart = 34;
-            
-            //int seqNum = IPAddress.NetworkToHostOrder(BitConverter.ToInt32(packet.Buffer, 38));
-            
 
             //strip tcp header
             int dataStart = tcpStart + 20;
@@ -100,34 +101,42 @@ namespace PacketCap
             }
 
             int dataBytes = packet.Length - dataStart;
-            /*if (dataBytes == 0)
+            bool syn = (packet.Buffer[47] & 0b10) == 0b10;
+            if (syn && dataBytes == 0)
             {
-                ClearBuffer();
-                Console.WriteLine("TCP connection reset");
                 ct = new ServiceCore.CryptoTransformHeroes();
+                ClearBuffer();
+                encrypt = !anySynSeen();
+                Console.WriteLine("TCP connection starting{0}",encrypt?" with encryption" : "");
+                sawSyn = true;
                 return;
-            }*/
-            if (dataBytes == 6) {
-                Console.WriteLine("Ping");
+            }
+            else if (!sawSyn)
+            {
+                Console.WriteLine("Haven't seen SYN yet from port {0}", srcPort);
+                return;
+            }
+            
+            if (dataBytes == 6 || dataBytes == 0) {
+                Console.WriteLine("Ping from port {0}",srcPort);
                 ClearBuffer();
                 return;
             }
 
-            String timestamp = packet.Timestamp.ToString("yyyy-MM-dd hh:mm:ss.fff");
-            recvSize.AddLast(dataBytes);
-            Console.WriteLine("{0}: {1}->{2} bytes={3}",timestamp,src,dst,dataBytes);
-            Devcat.Core.Net.Message.Packet p;
-            ArraySegment<byte> dataSeg;
-
-            dataSeg = new ArraySegment<byte>(packet.Buffer, dataStart, dataBytes);
-            p = new Devcat.Core.Net.Message.Packet(dataSeg);
+            //String timestamp = packet.Timestamp.ToString("yyyy-MM-dd hh:mm:ss.fff");
+            //Console.WriteLine("{0}: {1}->{2} bytes={3}",timestamp,src,dst,dataBytes);
             
-            long salt = p.InstanceId;
-            ct.Decrypt(dataSeg, salt);
-
+            recvSize.AddLast(dataBytes);
             Buffer.BlockCopy(packet.Buffer, dataStart, buffer, bufLen, dataBytes);
-            bufLen += dataBytes;
 
+            ArraySegment<byte> dataSeg = new ArraySegment<byte>(buffer, bufLen, dataBytes);
+            Devcat.Core.Net.Message.Packet p = new Devcat.Core.Net.Message.Packet(dataSeg);
+            if (encrypt) {
+                long salt = p.InstanceId;
+                ct.Decrypt(dataSeg, salt);
+            }
+            
+            bufLen += dataBytes;
             
             while (bufLen != 0)
             {
@@ -145,21 +154,21 @@ namespace PacketCap
                     }
                     else
                     {
-                        Console.WriteLine("bufLen={0} pLen={1} recvSize={2}", bufLen, pLen, recvSizeToString());
+                        //Console.WriteLine("bufLen={0} pLen={1} recvSize={2}", bufLen, pLen, recvSizeToString());
                     }
 
                 }
                 catch (System.Runtime.Serialization.SerializationException e)
                 {
                     Console.WriteLine("bufLen={0} recvSize={1}", bufLen, recvSizeToString());
-                    Console.WriteLine("Bad length {0}", e.Message);
+                    Console.WriteLine("Bad length {0}", e.Message);//this was the original code
                     RemovePacket();
                     continue;
                 }
 
                 if (pLen > bufLen)
                 {
-                    String lookForMsgType = "";
+                    /*String lookForMsgType = "";
                     try
                     {
                         if (classNames.ContainsKey(p.CategoryId))
@@ -168,7 +177,7 @@ namespace PacketCap
                         }
                     }
                     catch { }
-                    Console.WriteLine("Waiting for {0} bytes{1}", pLen - bufLen, lookForMsgType);
+                    Console.WriteLine("Waiting for {0} bytes{1}", pLen - bufLen, lookForMsgType);*/
                     return;
                 }
                 if (pLen <= 3 || pLen == 6) {
@@ -177,23 +186,19 @@ namespace PacketCap
                     Console.WriteLine("Invalid data packet with Length={0}",pLen);
                     continue;
                 }
-                Console.WriteLine("Read {0} bytes but need {1} bytes, creating object", bufLen, pLen);
+                //Console.WriteLine("Read {0} bytes but need {1} bytes, creating object", bufLen, pLen);
                 dataSeg = new ArraySegment<byte>(buffer, 0, pLen);
                 p = new Devcat.Core.Net.Message.Packet(dataSeg);
                 try
                 {
                     Console.WriteLine(p);
-                    if (classNames.ContainsKey(p.CategoryId))
-                    {
-                        String className = classNames[p.CategoryId];
-                        Console.WriteLine("Found a {0}", className);
-                    }
+                    
                     if (first)
                     {
                         first = false;
                         Object obj;
                         SerializeReader.FromBinary<Object>(p, out obj);
-                        setupDicts(obj.ToString());
+                        SetupDicts(obj.ToString());
                         mf.Handle(p, "hello");
                         mp.registerPrinters(mf, getGuid);
                         Console.WriteLine("Received TypeConverer");
@@ -203,9 +208,9 @@ namespace PacketCap
                         mf.Handle(p, "hello");
                     }
 
-                    //ShortenBuffer(p.Length);
+                    ShortenBuffer(pLen);
                     //Assume the rest of the buffer is filler
-                    ClearBuffer();
+                    //ClearBuffer();
                 }
 
                 catch (InvalidOperationException e)
@@ -214,13 +219,13 @@ namespace PacketCap
                     {
                         String className = classNames[p.CategoryId];
                         Guid guid = getGuid[p.CategoryId];
-                        Console.WriteLine("Library said {0}, I think its a {1} ({2})", e.Message, className, guid.ToString());
+                        Console.WriteLine("Found {0}, but {1}",className,e.Message);
                     }
                     else
                     {
-                        Console.WriteLine("Library said {0}, idk either", e.Message);
+                        Console.WriteLine("Unknown class error {0}", e.Message);
                     }
-                    ClearBuffer();
+                    ShortenBuffer(pLen);
                 }
                 catch (System.Runtime.Serialization.SerializationException e)
                 {
@@ -239,8 +244,11 @@ namespace PacketCap
                 }
             }
         }
-
-        private static void ShortenBuffer(int pLen) {
+        private void ShortenBuffer(int pLen) {
+            if (pLen == bufLen) {
+                ClearBuffer();
+                return;
+            }
             Buffer.BlockCopy(buffer, pLen, newbuffer, 0, bufLen - pLen);
             bufLen -= pLen;
 
@@ -265,12 +273,12 @@ namespace PacketCap
             }
         }
 
-        private static void ClearBuffer() {
+        private void ClearBuffer() {
             bufLen = 0;
             recvSize.Clear();
         }
 
-        private static void RemovePacket() {
+        private void RemovePacket() {
             ShortenBuffer(recvSize.First.Value);
         }
 
@@ -280,7 +288,7 @@ namespace PacketCap
             return addr.ToString();
         }
 
-        private static String recvSizeToString() {
+        private String recvSizeToString() {
             StringBuilder sb = new StringBuilder();
             sb.Append("[");
             foreach (int cur in recvSize) {
@@ -294,7 +302,16 @@ namespace PacketCap
             return sb.ToString();
         }
 
-        static void setupDicts(String contents)
+        private bool anySynSeen() {
+            foreach (KeyValuePair<uint,PacketCap> entry in portHandler) {
+                if (entry.Value.sawSyn) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        private void SetupDicts(String contents)
         {
             if (contents.StartsWith("TypeConverter"))
             {
@@ -311,7 +328,7 @@ namespace PacketCap
                 }
             }
         }
-        static PacketDevice getDevice() {
+        private static PacketDevice getDevice() {
             IList<LivePacketDevice> allDevices = LivePacketDevice.AllLocalMachine;
             if (allDevices.Count == 0)
             {

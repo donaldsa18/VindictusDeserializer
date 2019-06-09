@@ -138,6 +138,19 @@ namespace PacketCap
             this.Register<RankAlarmInfoMessage>(new Action<RankAlarmInfoMessage, object>(PrintRankAlarmInfoMessage));
             this.Register<UpdateBattleInventoryInTownMessage>(new Action<UpdateBattleInventoryInTownMessage, object>(PrintUpdateBattleInventoryInTownMessage));
             this.Register<BingoBoardResultMessage>(new Action<BingoBoardResultMessage, object>(PrintBingoBoardResultMessage));
+            this.Register<RandomRankInfoMessage>(new Action<RandomRankInfoMessage, object>(PrintRandomRankInfoMessage));
+            this.Register<JoinHousingMessage>(new Action<JoinHousingMessage, object>(PrintJoinHousingMessage));
+            this.Register<AttendanceInfoMessage>(new Action<AttendanceInfoMessage, object>(PrintAttendanceInfoMessage));
+            this.Register<UpdateTitleMessage>(new Action<UpdateTitleMessage, object>(PrintUpdateTitleMessage));
+            this.Register<GuildInventoryInfoMessage>(new Action<GuildInventoryInfoMessage, object>(PrintGuildInventoryInfoMessage));
+            this.Register<CashshopTirCoinResultMessage>(new Action<CashshopTirCoinResultMessage, object>(PrintCashshopTirCoinResultMessage));
+            this.Register<GiveCashShopDiscountCouponMessage>(new Action<GiveCashShopDiscountCouponMessage, object>(PrintGiveCashShopDiscountCouponMessage));
+            this.Register<NextSectorMessage>(new Action<NextSectorMessage, object>(PrintNextSectorMessage));
+            this.Register<BurnGauge>(new Action<BurnGauge, object>(PrintBurnGauge));
+            this.Register<StoryLinesMessage>(new Action<StoryLinesMessage, object>(PrintStoryLinesMessage));
+            this.Register<QuickSlotInfoMessage>(new Action<QuickSlotInfoMessage, object>(PrintQuickSlotInfoMessage));
+            this.Register<ManufactureInfoMessage>(new Action<ManufactureInfoMessage, object>(PrintManufactureInfoMessage));
+            this.Register<GuildInfoMessage>(new Action<GuildInfoMessage, object>(PrintGuildInfoMessage));
             //this.Register<>(new Action<, object>(Print));
             //this.Register<>(new Action<, object>(Print));
             //this.Register<>(new Action<, object>(Print));
@@ -146,9 +159,6 @@ namespace PacketCap
         private void Register<T>(Action<T,object> printer) {
             if (categoryDict.ContainsKey(typeof(T).GUID)) {
                 mf.Register<T>(printer,categoryDict[typeof(T).GUID]);
-            }
-            else {
-                Console.WriteLine("Couldn't find {0} in dictionary", typeof(T).FullName);
             }
         }
         private static void PrintSyncFeatureMatrixMessage(SyncFeatureMatrixMessage msg, object tag) {
@@ -886,7 +896,13 @@ namespace PacketCap
             Console.WriteLine(ListToString<NpcTalkEntity>(msg.Content, "NpcTalkMessage", 0));
         }
         private static void PrintHousingStartGrantedMessage(HousingStartGrantedMessage msg, object tag) {
-            Console.WriteLine("HousingStartGrantedMessage: NewSlot={0} NewKey={1}",msg.NewSlot,msg.NewKey);
+            if (msg == null)
+            {
+                Console.WriteLine("HousingStartGrantedMessage: [null]", msg.NewSlot, msg.NewKey);
+            }
+            else {
+                Console.WriteLine("HousingStartGrantedMessage: [NewSlot={0} NewKey={1}]", msg.NewSlot, msg.NewKey);
+            }
         }
 
         private static void PrintUpdateStoryGuideMessage(UpdateStoryGuideMessage msg, object tag) {
@@ -925,6 +941,7 @@ namespace PacketCap
         }
 
         private static void PrintCostumeUpdateMessage(CostumeUpdateMessage msg, object tag) {
+            //TODO: db connect
             Console.WriteLine("CostumeUpdateMessage:");
             Console.WriteLine(CostumeInfoToString(msg.CostumeInfo, 1));
         }
@@ -965,12 +982,11 @@ namespace PacketCap
 
         private static void PrintNpcListMessage(NpcListMessage msg, object tag) {
             Console.WriteLine("NpcListMessage:");
-            Console.WriteLine("\tBuildings:");
             if (msg.Buildings == null) {
                 return;
             }
             foreach (BuildingInfo b in msg.Buildings) {
-                Console.WriteLine("\t\tBuildingID={0} Npcs=[{1}]", b.BuildingID, String.Join(",", b.Npcs));
+                Console.WriteLine("\tBuildingID={0} Npcs=[{1}]", b.BuildingID, String.Join(",", b.Npcs));
             }
         }
 
@@ -990,8 +1006,18 @@ namespace PacketCap
         }
 
         private static void PrintInventoryInfoMessage(InventoryInfoMessage msg, object tag) {
-            //TODO: parse fully
-            Console.WriteLine(msg.ToString());
+            //TODO: db connect to share inventory
+            Console.WriteLine("InventoryInfoMessage:");
+            Console.WriteLine("\tStorageInfos:");
+            foreach (StorageInfo info in msg.StorageInfos)
+            {
+                Console.WriteLine("\t\tstorageID={0} isAvailable={1} storageName={2} storageTag={3}", info.StorageID, info.IsAvailable, info.StorageName, info.StorageTag);
+            }
+            Console.WriteLine(ListToString<SlotInfo>(msg.SlotInfos, "SlotInfos", 1));
+            Console.WriteLine(DictToString<int, long>(msg.EquipmentInfo, "EquipmentInfo", 1));
+            Console.WriteLine(DictToString<int, string>(msg.QuickSlotInfo.SlotItemClasses, "QuickSlotInfo", 1));
+            Console.WriteLine("\tUnequippableParts=[{0}]",String.Join(",",msg.UnequippableParts));
+            
         }
 
         private static void PrintAskSecondPasswordMessage(AskSecondPasswordMessage msg, object tag) {
@@ -1099,6 +1125,98 @@ namespace PacketCap
             Console.WriteLine("BingoBoardResultMessage:");
             Console.WriteLine("\tResult={0}", BingoResultToString((BingoBoardResultMessage.Bingo_Result)msg.Result));
             Console.WriteLine("\tBingoBoardNumbers=[{0}]", String.Join(",", msg.BingoBoardNumbers));
+        }
+
+        private static void PrintRandomRankInfoMessage(RandomRankInfoMessage msg, object tag) {
+            Console.WriteLine("RandomRankInfoMessage:");
+            foreach (RandomRankResultInfo info in msg.RandomRankResult) {
+                Console.WriteLine("\tEventID={0}",info.EventID);
+                Console.WriteLine("\tPeriodType={0}", info.PeriodType);
+                Console.WriteLine(ListToString<RankResultInfo>(info.RandomRankResult, "RandomRankResult", 1));
+            }
+        }
+
+        private static void PrintJoinHousingMessage(JoinHousingMessage msg, object tag) {
+            Console.WriteLine("JoinHousingMessage: [TargetID={0}]",msg.TargetID);
+        }
+
+        private static void PrintAttendanceInfoMessage(AttendanceInfoMessage msg, object tag) {
+            //TODO: db connect
+            Console.WriteLine("AttendanceInfoMessage:");
+            Console.WriteLine("\tEventType={0}", msg.EventType);
+            Console.WriteLine("\tCurrentVersion={0}", msg.CurrentVersion);
+            Console.WriteLine("\tPeriodText={0}", msg.PeriodText);
+            Console.WriteLine("\tAttendanceInfo:");
+            foreach (AttendanceDayInfo info in msg.AttendanceInfo) {
+                Console.WriteLine("\t\tday={0} isCompleted={1} completedRewardsIndex={2}",info.day,info.isCompleted,info.completedRewardIndex);
+            }
+            Console.WriteLine("\tBonusRewardInfo:");
+            foreach (AttendanceDayInfo info in msg.BonusRewardInfo)
+            {
+                Console.WriteLine("\t\tday={0} isCompleted={1} completedRewardsIndex={2}", info.day, info.isCompleted, info.completedRewardIndex);
+            }
+        }
+        private static void PrintUpdateTitleMessage(UpdateTitleMessage msg, object tag) {
+            Console.WriteLine(ListToString<TitleSlotInfo>(msg.Titles, "UpdateTitleMessage", 0));
+        }
+
+        private static void PrintGuildInventoryInfoMessage(GuildInventoryInfoMessage msg, object tag) {
+            Console.WriteLine("GuildInventoryInfoMessage:");
+            Console.WriteLine("\tIsEnabled={0}",msg.IsEnabled);
+            Console.WriteLine("\tStorageCount={0}",msg.StorageCount);
+            Console.WriteLine("\tGoldLimit={0}",msg.GoldLimit);
+            Console.WriteLine("\tAccessLimtiTag={0}",msg.AccessLimtiTag);
+            Console.WriteLine(ListToString<SlotInfo>(msg.SlotInfos,"SlotInfos",1));
+        }
+
+        private static void PrintCashshopTirCoinResultMessage(CashshopTirCoinResultMessage msg, object tag) {
+            Console.WriteLine("CashshopTirCoinResultMessage:");
+            Console.WriteLine("\tIsSuccess={0}",msg.isSuccess);
+            Console.WriteLine("\tisBeautyShop={0}",msg.isBeautyShop);
+            Console.WriteLine("\tsuccessCount={0}",msg.successCount);
+            Console.WriteLine("\tIgnoreItems:");
+            foreach (TirCoinIgnoreItemInfo item in msg.IgnoreItems) {
+                Console.WriteLine("\t\tItemClass={0} Amount={1} Duration={2} Price={3}",item.ItemClass,item.Amount,item.Duration,item.Price);
+            }
+        }
+
+        private static void PrintGiveCashShopDiscountCouponMessage(GiveCashShopDiscountCouponMessage msg, object tag) {
+            Console.WriteLine(msg.ToString());
+        }
+
+        private static void PrintNextSectorMessage(NextSectorMessage msg, object tag) {
+            Console.WriteLine(msg.ToString());
+        }
+
+        private static void PrintBurnGauge(BurnGauge msg, object tag) {
+            //TODO: add db connect
+            Console.WriteLine("BurnGauge:");
+            Console.WriteLine("\tGauge={0}",msg.Gauge);
+            Console.WriteLine("\tJackpotStartGauge={0}",msg.JackpotStartGauge);
+            Console.WriteLine("\tJackpotMaxGauge={0}",msg.JackpotMaxGauge);
+        }
+
+        private static void PrintStoryLinesMessage(StoryLinesMessage msg, object tag) {
+            Console.WriteLine("StoryLinesMessage:");
+            foreach (BriefStoryLineInfo info in msg.StoryStatus) {
+                Console.WriteLine("\tStoryLine={0} Phase={1} Status={2} PhaseText={3}",info.StoryLine,info.Phase,info.Status,info.PhaseText);
+            }
+        }
+
+        private static void PrintQuickSlotInfoMessage(QuickSlotInfoMessage msg, object tag) {
+            Console.WriteLine(msg.ToString());
+        }
+
+        private static void PrintManufactureInfoMessage(ManufactureInfoMessage msg, object tag) {
+            Console.WriteLine("ManufactureInfoMessage:");
+            Console.WriteLine(DictToString<string, int>(msg.ExpDictionary, "ExpDictionary", 1));
+            Console.WriteLine(DictToString<string, int>(msg.GradeDictionary, "GradeDictionary", 1));
+            Console.WriteLine(ListToString<string>(msg.Recipes, "Recipes", 1));
+        }
+
+        private static void PrintGuildInfoMessage(GuildInfoMessage msg, object tag) {
+            //TODO: db connect
+            Console.WriteLine(msg.ToString());
         }
     }
 }

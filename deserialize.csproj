@@ -65,7 +65,7 @@
     <SignManifests>true</SignManifests>
   </PropertyGroup>
   <PropertyGroup>
-    <StartupObject>PacketCap.Program</StartupObject>
+    <StartupObject>PacketCap.PacketCap</StartupObject>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Core">
@@ -115,6 +115,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ChannelProcessor.cs" />
     <Compile Include="ClassInfoFixed.cs" />
     <Compile Include="MessagePrinter.cs" />
     <Compile Include="PacketCap.cs" />
