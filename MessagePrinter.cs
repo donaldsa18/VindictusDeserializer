@@ -101,10 +101,11 @@ namespace PacketCap
             Console.WriteLine("\tProloguePlayed={0}", msg.ProloguePlayed);
             Console.WriteLine("\tPresetUsedCharacterCount={0}", msg.PresetUsedCharacterCount);
             Console.WriteLine("\tLoginPartyState=[{0}]", String.Join(",", msg.LoginPartyState));
-            Console.WriteLine("\tCharacters:");
+            int i = 0;
             foreach (CharacterSummary c in msg.Characters)
             {
-                Console.WriteLine(CharacterSummaryToString(c, "Character", 2));
+                String title = String.Format("Character[{0}]", i++);
+                Console.WriteLine(CharacterSummaryToString(c, title, 1));
             }
         }
 
@@ -1270,12 +1271,9 @@ namespace PacketCap
                 sb.Append(entry.Value);
                 sb.Append("\n");
             }
-
+            sb.Remove(sb.Length-1,1);
             return sb.ToString();
         }
-        
-        
-        
 
         private static void PrintCharacterCommonInfoMessage(CharacterCommonInfoMessage msg, object tag) {
             CharacterSummary c = msg.Info;
