@@ -33,42 +33,27 @@ namespace PacketCap
 
         private static string myIp = "";
 
-        static int Main(string[] args)
+        private static string filter = "host 192.168.0.200 and tcp portrange 27000-27015";
+
+        static void Main(string[] args)
         {
-            string filter = "host 192.168.0.200 and tcp portrange 27000-27015";
-            /*if (args.Length != 0) {
-                ChannelProcessor.Main(null);
-            }*/
             PacketDevice selectedDevice = getDevice();
 
-            // Open the device
-            using (PacketCommunicator communicator =
-                selectedDevice.Open(65536,                                  // portion of the packet to capture
-                                                                            // 65536 guarantees that the whole packet will be captured on all the link layers
-                                    PacketDeviceOpenAttributes.Promiscuous, // promiscuous mode
-                                    1000))                                  // read timeout
+            //Open the device with a 65kB buffer, promiscuous mode, 1s timeout
+            using (PacketCommunicator communicator = selectedDevice.Open(65536,PacketDeviceOpenAttributes.Promiscuous,1000))
             {
                 Console.WriteLine("Waiting for TCP stream to start on {0}", selectedDevice.Description);
-                //communicator.SetFilter("src host 192.168.0.200 and tcp src portrange 27000-27015");
+
                 communicator.SetFilter(filter);
+
                 // Retrieve the packets
-
-                do {
-                    PacketCommunicatorReceiveResult result = communicator.ReceivePacket(out PcapDotNet.Packets.Packet packet);
-
-                    if (result != PacketCommunicatorReceiveResult.Ok) {
-                        continue;
-                    }
-                    HandlePacketPort(packet);
-
-                } while (true);
+                communicator.ReceivePackets(0, HandlePacketPort);
             }
         }
         private static void HandlePacketPort(PcapDotNet.Packets.Packet packet)
         {
             string connString = getConnString(packet.Buffer);
-            PacketCap cap;
-            if (portHandler.TryGetValue(connString, out cap))
+            if (portHandler.TryGetValue(connString, out PacketCap cap))
             {
                 cap.HandlePacket(packet,connString);
             }
