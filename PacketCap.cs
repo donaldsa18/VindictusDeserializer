@@ -11,6 +11,7 @@ using PcapDotNet.Packets.IpV4;
 using PcapDotNet.Packets.IpV6;
 using PcapDotNet.Packets.Transport;
 using PcapDotNet.Packets.Ethernet;
+using Utility;
 
 namespace PacketCap
 {
@@ -40,6 +41,12 @@ namespace PacketCap
 
         private static string filter = "host 192.168.0.200 and tcp portrange 27000-27015";
 
+        private string connString;
+
+        public PacketCap(string connString) {
+            this.connString = connString;
+        }
+
         static void Main(string[] args)
         {
             PacketDevice selectedDevice = getDevice();
@@ -55,35 +62,37 @@ namespace PacketCap
                 communicator.ReceivePackets(0, HandlePacketPort);
             }
         }
+
         private static void HandlePacketPort(PcapDotNet.Packets.Packet packet)
         {
-            string connString = getConnString(packet.Buffer);
+            string connString = getConnString(packet);
             if (portHandler.TryGetValue(connString, out PacketCap cap))
             {
-                cap.HandlePacket(packet,connString);
+                cap.HandlePacket(packet);
             }
             else {
-                cap = new PacketCap();
+                cap = new PacketCap(connString);
                 portHandler.Add(connString, cap);
                 Console.WriteLine("Creating PacketCap for connection {0}", connString);
-                cap.HandlePacket(packet,connString);
+                cap.HandlePacket(packet);
             }
         }
 
 
-        private void HandlePacket(PcapDotNet.Packets.Packet packet,String connString) {
+        private void HandlePacket(PcapDotNet.Packets.Packet packet) {
             String srcIp = "";
             TcpDatagram tcp = null;
-            int dataStart = packet.Ethernet.HeaderLength;
-            switch (packet.Ethernet.EtherType) {
+            EthernetDatagram eth = packet.Ethernet;
+            int dataStart = eth.HeaderLength;
+            switch (eth.EtherType) {
                 case EthernetType.IpV4:
-                    IpV4Datagram ip = packet.Ethernet.IpV4;
+                    IpV4Datagram ip = eth.IpV4;
                     tcp = ip.Tcp;
                     srcIp = ip.Source.ToString();
                     dataStart += ip.HeaderLength + tcp.RealHeaderLength;
                     break;
                 case EthernetType.IpV6:
-                    IpV6Datagram ip6 = packet.Ethernet.IpV6;
+                    IpV6Datagram ip6 = eth.IpV6;
                     tcp = ip6.Tcp;
                     srcIp = ip6.Source.ToString();
                     dataStart += 40 + tcp.RealHeaderLength;
@@ -165,16 +174,6 @@ namespace PacketCap
 
                 if (pLen > bufLen)
                 {
-                    /*String lookForMsgType = "";
-                    try
-                    {
-                        if (classNames.ContainsKey(p.CategoryId))
-                        {
-                            lookForMsgType = String.Format(" for a {0} packet", classNames[p.CategoryId]);
-                        }
-                    }
-                    catch { }
-                    Console.WriteLine("Waiting for {0} bytes{1}", pLen - bufLen, lookForMsgType);*/
                     return;
                 }
                 if (pLen <= 3 || pLen == 6) {
@@ -208,23 +207,18 @@ namespace PacketCap
                     {
                         mf.Handle(p, null);
                     }
-
                     ShortenBuffer(pLen);
-                    //Assume the rest of the buffer is filler
-                    //ClearBuffer();
                 }
-
                 catch (InvalidOperationException e)
                 {
-                    if (classNames.ContainsKey(p.CategoryId))
+                    String errMsg = e.Message;
+                    Console.WriteLine("Unknown class error {0} {1}", errMsg, connString);
+                    MatchCollection mc = Regex.Matches(errMsg, @"\.([^,\.]{2,}),");
+                    foreach (Match m in mc)
                     {
-                        String className = classNames[p.CategoryId];
-                        Guid guid = getGuid[p.CategoryId];
-                        Console.WriteLine("Found {0}, but {1}",className,e.Message);
-                    }
-                    else
-                    {
-                        Console.WriteLine("Unknown class error {0}", e.Message);
+                        String className = m.Groups[1].ToString();
+                        String methodStr = genMethodString(className);
+                        FileLog.Log("unhandled.log", methodStr);
                     }
                     ShortenBuffer(pLen);
                 }
@@ -245,6 +239,18 @@ namespace PacketCap
                 }
             }
         }
+        private static string genMethodString(string className) {
+            StringBuilder sb = new StringBuilder();
+            sb.Append("\nprivate static void Print");
+            sb.Append(className);
+            sb.Append("(");
+            sb.Append(className);
+            sb.Append(" msg, object tag) {\n\tConsole.WriteLine(\"");
+            sb.Append(className);
+            sb.Append(":\");\n}");
+            return sb.ToString();
+        }
+
         private void ShortenBuffer(int pLen) {
             if (pLen == bufLen) {
                 ClearBuffer();
@@ -291,19 +297,38 @@ namespace PacketCap
             return sb.ToString();
         }
 
-        private static string getConnString(byte[] Buffer) {
-            uint srcPort = ((uint)Buffer[34] << 8) | (uint)Buffer[35];
-            uint dstPort = ((uint)Buffer[36] << 8) | (uint)Buffer[37];
-            String srcIp = BytesToIpAddr(Buffer, 26);
-            String dstIp = BytesToIpAddr(Buffer, 30);
+        private static string getConnString(PcapDotNet.Packets.Packet packet) {
+            String srcIp = "";
+            String dstIp = "";
+            TcpDatagram tcp = null;
+            EthernetDatagram eth = packet.Ethernet;
+            switch (eth.EtherType)
+            {
+                case EthernetType.IpV4:
+                    IpV4Datagram ip = eth.IpV4;
+                    tcp = ip.Tcp;
+                    srcIp = ip.Source.ToString();
+                    dstIp = ip.Destination.ToString();
+                    break;
+                case EthernetType.IpV6:
+                    IpV6Datagram ip6 = eth.IpV6;
+                    tcp = ip6.Tcp;
+                    srcIp = ip6.Source.ToString();
+                    dstIp = ip6.CurrentDestination.ToString();
+                    break;
+                default:
+                    Console.WriteLine("We should never see anything not ipv4 or ipv6 since we filtered by tcp");
+                    return "";
+            }
+           
             StringBuilder sb = new StringBuilder();
             sb.Append(srcIp);
             sb.Append(":");
-            sb.Append(srcPort);
+            sb.Append(tcp.SourcePort);
             sb.Append(" to ");
             sb.Append(dstIp);
             sb.Append(":");
-            sb.Append(dstPort);
+            sb.Append(tcp.DestinationPort);
             return sb.ToString();
         }
 

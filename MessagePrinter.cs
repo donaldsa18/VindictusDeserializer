@@ -532,7 +532,6 @@ namespace PacketCap
         {
             String logType = ((object)(ClientLogMessage.LogTypes)msg.LogType).ToString();
             Console.WriteLine("ClientLogMessage: {0} {1}={2}", logType, msg.Key, msg.Value);
-            Console.WriteLine(msg.ToString());
         }
 
         private static void PrintEnterRegion(EnterRegion msg, object tag)
