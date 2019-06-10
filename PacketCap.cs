@@ -292,8 +292,8 @@ namespace PacketCap
         public void ProcessTypeConverter(Devcat.Core.Net.Message.Packet p)
         {
             SerializeReader.FromBinary<Object>(p, out Object obj);
-            SetupDicts(obj.ToString());
-            mf.Handle(p, null);
+            String s1 = obj.ToString();
+            SetupDicts(s1);
             mp.registerPrinters(mf, getGuid);
         }
 
@@ -404,10 +404,8 @@ namespace PacketCap
                     }
                     else {
                         classNames.Add(categoryId, className);
+                        getGuid.Add(categoryId, guid);
                     }
-                    
-                    getGuid.Add(categoryId, guid);
-                    loaded.Add(String.Format("{0} {1}",className,guid.ToString()), false);
                 }
             }
         }
