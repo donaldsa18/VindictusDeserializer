@@ -42,6 +42,9 @@ namespace PacketCap
 
         private string connString;
 
+        private static HashSet<string> unhandledTypes = new HashSet<string>();
+
+        private int numErrors = 0;
         public PacketCap(string connString) {
             this.connString = connString;
         }
@@ -79,6 +82,10 @@ namespace PacketCap
 
 
         private void HandlePacket(PcapDotNet.Packets.Packet packet) {
+            //give up if 10 errors are seen to prevent unexpected crashes
+            if (numErrors > 10) {
+                return;
+            }
             String srcIp = "";
             TcpDatagram tcp = null;
             EthernetDatagram eth = packet.Ethernet;
@@ -165,8 +172,9 @@ namespace PacketCap
                 }
                 catch (System.Runtime.Serialization.SerializationException e)
                 {
-                    Console.WriteLine("{0}: Bad length {1}", connString, e.Message);
+                    //Console.WriteLine("{0}: Bad length {1}", connString, e.Message);
                     RemovePacket();
+                    numErrors++;
                     continue;
                 }
 
@@ -176,6 +184,7 @@ namespace PacketCap
                 if (pLen <= 3 || pLen == 6) {
                     //ClearBuffer();
                     ShortenBuffer(pLen);
+                    numErrors++;
                     Console.WriteLine("{0}: Invalid data packet with Length={1}", connString, pLen);
                     continue;
                 }
@@ -214,9 +223,10 @@ namespace PacketCap
                     foreach (Match m in mc)
                     {
                         className = m.Groups[1].ToString();
-                        if (className != "Identify") {
+                        if (className != "Identify" && !unhandledTypes.Contains(className)) {
                             String methodStr = GenMethodString(className);
                             FileLog.Log("unhandled.log", methodStr);
+                            unhandledTypes.Add(className);
                         }
                     }
                     if (className != "Identify")
@@ -233,16 +243,19 @@ namespace PacketCap
                 {
                     Console.WriteLine("{0}: The packet wasn't ready {1}", connString, e.Message);
                     RemovePacket();
+                    numErrors++;
                 }
                 catch (System.ArgumentOutOfRangeException e)
                 {
                     Console.WriteLine("{0}: The packet was too short: {1}", connString, e.Message);
                     ShortenBuffer(pLen);
+                    numErrors++;
                 }
                 catch (System.ArgumentException e)
                 {
                     Console.WriteLine("{0}: Serializing failed bacause a dict was made with 2 identical keys: {1}", connString, e.StackTrace);
                     ClearBuffer();
+                    numErrors++;
                 }
             }
         }
@@ -380,8 +393,7 @@ namespace PacketCap
             //1 -> no
             //2 -> yes
             //3 -> yes
-            //4 -> no
-            return 1 < numSyn && numSyn < 4;
+            return 1 < numSyn;
         }
 
         private void SetupDicts(String contents)

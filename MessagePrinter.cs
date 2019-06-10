@@ -269,22 +269,19 @@ namespace PacketCap
             sb.Append(printName);
             sb.Append(":");
             int startLen = sb.Length;
-            String t = new string('\t', numTabs + 1);
+            String t = "\n" + new string('\t', numTabs + 1);
             if (l == null || c.Shineness != l.Shineness) {
-                sb.Append("\n");
                 sb.Append(t);
                 sb.Append("Shineness=");
                 sb.Append(c.Shineness);
                 
             }
             if(l == null || c.Height != l.Height) {
-                sb.Append("\n");
                 sb.Append(t);
                 sb.Append("Height=");
                 sb.Append(c.Height);
             }
             if (l == null || c.Bust != l.Bust) {
-                sb.Append("\n");
                 sb.Append(t);
                 sb.Append("Bust=");
                 sb.Append(c.Bust);
@@ -293,53 +290,47 @@ namespace PacketCap
                 sb.Append(t);
                 sb.Append("PaintingPosX=");
                 sb.Append(c.PaintingPosX);
-                sb.Append("\n");
             }
             if (l == null || c.PaintingPosX != l.PaintingPosX)
             {
                 sb.Append(t);
                 sb.Append("PaintingPosY=");
                 sb.Append(c.PaintingPosY);
-                sb.Append("\n");
+                
             }
             if (l == null || c.PaintingRotation != l.PaintingRotation)
             {
                 sb.Append(t);
                 sb.Append("PaintingRotation=");
                 sb.Append(c.PaintingRotation);
-                sb.Append("\n");
+                
             }
             if (l == null || c.PaintingSize != l.PaintingSize)
             {
-                sb.Append("\n");
                 sb.Append(t);
                 sb.Append("PaintingSize=");
                 sb.Append(c.PaintingSize);
             }
             if (l == null || c.HideHeadCostume != l.HideHeadCostume)
             {
-                sb.Append("\n");
                 sb.Append(t);
                 sb.Append("HideHeadCostume=");
                 sb.Append(c.HideHeadCostume);
             }
             if (l == null || c.CafeType != l.CafeType)
             {
-                sb.Append("\n");
                 sb.Append(t);
                 sb.Append("CafeType=");
                 sb.Append(c.CafeType);
             }
             if (l == null || c.IsReturn != l.IsReturn)
             {
-                sb.Append("\n");
                 sb.Append(t);
                 sb.Append("IsReturn=");
                 sb.Append(c.IsReturn);
             }
             if (l == null || c.VIPCode != l.VIPCode)
             {
-                sb.Append("\n");
                 sb.Append(t);
                 sb.Append("VIPCode=");
                 sb.Append(c.VIPCode);
@@ -378,8 +369,7 @@ namespace PacketCap
                 sb.Append("\n");
                 sb.Append(temp);
             }
-            
-            
+
             
             StringBuilder sb2 = new StringBuilder();
 
@@ -387,12 +377,10 @@ namespace PacketCap
                 if (l != null && l.DecorationInfo.TryGetValue(entry.Key, out int val) && val == entry.Value) {
                     continue;
                 }
-                sb2.Append("\n");
                 sb2.Append(t);
                 sb2.Append(IntToDecorationSlot(entry.Key));
                 sb2.Append("=");
                 sb2.Append(entry.Value);
-                
             }
 
             if (sb2.Length != 0) {
@@ -408,7 +396,6 @@ namespace PacketCap
                 if (l != null && l.DecorationColorInfo.TryGetValue(entry.Key, out int val) && val == entry.Value) {
                     continue;
                 }
-                sb2.Append("\n");
                 sb2.Append(t);
                 sb2.Append(IntToDecorationColorSlot(entry.Key));
                 sb2.Append("=");
@@ -826,6 +813,9 @@ namespace PacketCap
 
         private static void PrintHotSpringRequestInfoMessage(HotSpringRequestInfoMessage msg, object tag)
         {
+            if (msg == null) {
+                return;
+            }
             Console.WriteLine("HotSpringRequestInfoMessage: Channel={0} TownID={1}", msg.Channel, msg.TownID);
         }
 
@@ -1034,6 +1024,9 @@ namespace PacketCap
         }
 
         private static string GameJoinMemberInfoToString(GameJoinMemberInfo m, int tabs) {
+            if (m == null) {
+                return "";
+            }
             String t = new string('\t', tabs);
             StringBuilder sb = new StringBuilder();
             sb.AppendFormat("{0}Name={1}", t, m.Name);
@@ -1841,6 +1834,225 @@ namespace PacketCap
             character = characters[msg.Index];
             Console.WriteLine(msg.ToString());
         }
+        private static void PrintRegisterServerMessage(RegisterServerMessage msg, object tag)
+        {
+            //TODO: proudnet stuff from this message
+            Console.WriteLine("RegisterServerMessage:");
+            GameInfo g = msg.TheInfo;
+            Console.WriteLine("\tName={0}",g.Name);
+            Console.WriteLine("\tMap={0}",g.Map);
+            Console.WriteLine("\tGameDir={0}",g.GameDir);
+            Console.WriteLine("\tDescription={0}",g.Description);
+            Console.WriteLine("\tHostID={0}",g.HostID);
+            Console.WriteLine("\tDSIP={0}",g.DSIP);
+            Console.WriteLine("\tDSPort={0}",g.DSPort);
+        }
+        private static void PrintQueryQuestProgressMessage(QueryQuestProgressMessage msg, object tag)
+        {
+            Console.WriteLine("QueryQuestProgressMessage: []");
+        }
 
+        private static void PrintQueryInventoryMessage(QueryInventoryMessage msg, object tag)
+        {
+            Console.WriteLine("QueryInventoryMessage: []");
+        }
+
+        private static void PrintReturnToTownMessage(ReturnToTownMessage msg, object tag)
+        {
+            Console.WriteLine("ReturnToTownMessage: []");
+        }
+
+        private static void PrintLeavePartyMessage(LeavePartyMessage msg, object tag)
+        {
+            Console.WriteLine("LeavePartyMessage: []");
+        }
+
+        private static void PrintFindNewbieRecommendGuildMessage(FindNewbieRecommendGuildMessage msg, object tag)
+        {
+            Console.WriteLine("FindNewbieRecommendGuildMessage: []");
+        }
+
+        private static void PrintPropBrokenMessage(PropBrokenMessage msg, object tag)
+        {
+            Console.WriteLine(msg.ToString());
+        }
+
+        private static void PrintSectorPropListMessage(SectorPropListMessage msg, object tag)
+        {
+            Console.WriteLine(DictToString<int, int>(msg.Props, "SectorPropListMessage", 0));
+        }
+
+        private static void PrintMoveToNextSectorMessage(MoveToNextSectorMessage msg, object tag)
+        {
+            Console.WriteLine("MoveToNextSectorMessage:");
+            Console.WriteLine("\tTriggerName={0}",msg.TriggerName);
+            Console.WriteLine("\tTargetGroup={0}",msg.TargetGroup);
+            Console.WriteLine("\tHolyProps=[{0}]", String.Join(",", msg.HolyProps));
+        }
+        private static void PrintStartGameMessage(StartGameMessage msg, object tag)
+        {
+            Console.WriteLine("StartGameMessage: []");
+        }
+
+        private static void PrintAcceptQuestMessage(AcceptQuestMessage msg, object tag)
+        {
+            Console.WriteLine("AcceptQuestMessage:");
+            Console.WriteLine("\tQuestID={0}",msg.QuestID);
+            Console.WriteLine("\tTitle={0}",msg.Title);
+            Console.WriteLine("\tSwearID={0}",msg.SwearID);
+            ShipOptionInfo s = msg.Option;
+            Console.WriteLine("\tMaxMemberCount={0}",s.MaxMemberCount);
+            Console.WriteLine("\tSwearMemberLimit={0}",s.SwearMemberLimit);
+            Console.WriteLine("\tUntilForceStart={0}",s.UntilForceStart);
+            Console.WriteLine("\tMinLevel={0}",s.MinLevel);
+            Console.WriteLine("\tMaxLevel={0}",s.MaxLevel);
+            Console.WriteLine("\tIsPartyOnly={0}",s.IsPartyOnly);
+            Console.WriteLine("\tOver18Only={0}",s.Over18Only);
+            Console.WriteLine("\tDifficulty={0}",s.Difficulty);
+            Console.WriteLine("\tIsSeason2={0}",s.IsSeason2);
+            Console.WriteLine("\tSelectedBossQuestIDInfos=[{0}]",String.Join(",",s.SelectedBossQuestIDInfos));
+            Console.WriteLine("\tIsPracticeMode={0}",s.IsPracticeMode);
+            Console.WriteLine("\tUserDSMode={0}",s.UserDSMode);
+        }
+
+        private static void PrintQueryRecommendShipMessage(QueryRecommendShipMessage msg, object tag)
+        {
+            Console.WriteLine(msg.ToString());
+        }
+
+        private static void PrintEquipItemMessage(EquipItemMessage msg, object tag)
+        {
+            Console.WriteLine(msg.ToString());
+        }
+
+        private static void PrintEquipBundleMessage(EquipBundleMessage msg, object tag)
+        {
+            Console.WriteLine(msg.ToString());
+        }
+
+        private static void PrintMoveInventoryItemMessage(MoveInventoryItemMessage msg, object tag)
+        {
+            Console.WriteLine(msg.ToString());
+        }
+
+        private static BeautyShopCustomizeMessage lastBeautyShopMsg = null;
+
+        private static void PrintBeautyShopCustomizeMessage(BeautyShopCustomizeMessage msg, object tag)
+        {
+            Console.WriteLine("BeautyShopCustomizeMessage:");
+            Console.WriteLine("CustomizeItems:");
+            foreach (CustomizeItemRequestInfo info in msg.CustomizeItems) {
+                String color = String.Format("({0},{1},{2})", IntToRGB(info.Color1), IntToRGB(info.Color2), IntToRGB(info.Color3));
+                Console.WriteLine("\tItemClass={0} Category={1} Color={2} Duration={3} Price={4} CouponItemID={5}",info.ItemClass,info.Category,color,info.Duration,info.Price,info.CouponItemID);
+            }
+            BeautyShopCustomizeMessage l = lastBeautyShopMsg;
+            BeautyShopCustomizeMessage c = msg;
+            if (l == null || c.PaintingPosX != l.PaintingPosX) {
+                Console.WriteLine("\tPaintingPosX={0}", c.PaintingPosX);
+            }
+            if (l == null || c.PaintingPosX != l.PaintingPosX) {
+                Console.WriteLine("\tPaintingPosY={0}", c.PaintingPosY);
+            }
+            if (l == null || c.PaintingSize != l.PaintingSize) {
+                Console.WriteLine("\tPaintingSize={0}", c.PaintingSize);
+            }
+            if (l == null || c.PaintingRotation != l.PaintingRotation) {
+                Console.WriteLine("\tPaintingRotation={0}", c.PaintingRotation);
+            }
+            if (l == null || c.payment != l.payment) {
+                Console.WriteLine("\tPaintingRotation={0}", c.payment);
+            }
+            if (l == null || c.BodyPaintingPosX != l.BodyPaintingPosX) {
+                Console.WriteLine("\tBodyPaintingPosX={0}", c.BodyPaintingPosX);
+            }
+            if (l == null || c.BodyPaintingPosX != l.BodyPaintingPosX) {
+                Console.WriteLine("\tBodyPaintingPosY={0}", c.BodyPaintingPosY);
+            }
+            if (l == null || c.BodyPaintingSize != l.BodyPaintingSize) {
+                Console.WriteLine("\tBodyPaintingSize={0}", c.BodyPaintingSize);
+            }
+            if (l == null || c.BodyPaintingRotation != l.BodyPaintingRotation) {
+                Console.WriteLine("\tBodyPaintingRotation={0}", c.BodyPaintingRotation);
+            }
+            if (l == null || c.BodyPaintingSide != l.BodyPaintingSide) {
+                Console.WriteLine("\tBodyPaintingSide={0}", c.BodyPaintingSide);
+            }
+            if (l == null || c.BodyPaintingClip != l.BodyPaintingClip)
+            {
+                Console.WriteLine("\tBodyPaintingClip={0}", c.BodyPaintingClip);
+            }
+            if (l == null || c.BodyPaintingMode != l.BodyPaintingMode)
+            {
+                Console.WriteLine("\tBodyPaintingMode={0}", c.BodyPaintingMode);
+            }
+            if (l == null || c.HeightValue != l.HeightValue)
+            {
+                Console.WriteLine("\tHeight={0}", c.HeightValue);
+            }
+            if (l == null || c.BustValue != l.BustValue)
+            {
+                Console.WriteLine("\tBust={0}", c.BustValue);
+            }
+            if (l == null || c.ShinenessValue != l.ShinenessValue)
+            {
+                Console.WriteLine("\tShineness={0}", c.ShinenessValue);
+            }
+            if (l == null || c.SkinColor != l.SkinColor)
+            {
+                Console.WriteLine("\tSkinColor={0}", IntToRGB(c.SkinColor));
+            }
+            if (l == null || c.EyeColor != l.EyeColor)
+            {
+                Console.WriteLine("\tEyeColor={0}", IntToRGB(c.EyeColor));
+            }
+            if (l == null || c.EyebrowItemClass != l.EyebrowItemClass)
+            {
+                Console.WriteLine("\tEyebrowItemClass={0}", c.EyebrowItemClass);
+            }
+            if (l == null || c.EyebrowColor != l.EyebrowColor)
+            {
+                Console.WriteLine("\tEyebrowColor={0}", IntToRGB(c.EyebrowColor));
+            }
+            if (l == null || c.LookChangeItemClass != l.LookChangeItemClass)
+            {
+                Console.WriteLine("\tLookChangeItemClass={0}", c.LookChangeItemClass);
+            }
+
+            if (l == null || c.LookChangeDuration != l.LookChangeDuration)
+            {
+                Console.WriteLine("\tLookChangeDuration={0}", c.LookChangeDuration);
+            }
+            if (l == null || c.LookChangePrice != l.LookChangePrice)
+            {
+                Console.WriteLine("\tLookChangePrice={0}", c.LookChangePrice);
+            }
+            Console.WriteLine(BodyShapeInfoToString(c.BodyShapeInfo, 1, l.BodyShapeInfo));
+            lastBeautyShopMsg = msg;
+        }
+
+        private static void PrintHideCostumeMessage(HideCostumeMessage msg, object tag)
+        {
+            Console.WriteLine("HideCostumeMessage: HideHead={0} AvatarPart={1} AvatarState={2}",msg.HideHead,msg.AvatarPart,msg.AvatarState);
+        }
+
+        private static void PrintUseInventoryItemMessage(UseInventoryItemMessage msg, object tag)
+        {
+            Console.WriteLine(msg.ToString());
+        }
+
+        private static void PrintGetMailItemMessage(GetMailItemMessage msg, object tag)
+        {
+            Console.WriteLine(msg.ToString());
+        }
+
+        private static void PrintQueryMailInfoMessage(QueryMailInfoMessage msg, object tag)
+        {
+            Console.WriteLine(msg.ToString());
+        }
+
+        private static void PrintMonsterKilledMessage(MonsterKilledMessage msg, object tag)
+        {
+            Console.WriteLine(msg.ToString());
+        }
     }
 }
