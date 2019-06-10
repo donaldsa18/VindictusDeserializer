@@ -165,20 +165,18 @@ namespace PacketCap
                 }
                 catch (System.Runtime.Serialization.SerializationException e)
                 {
-                    Console.WriteLine("bufLen={0} recvSize={1}", bufLen, RecvSizeToString());
-                    Console.WriteLine("Bad length {0}", e.Message);//this was the original code
+                    Console.WriteLine("{0}: Bad length {1}", connString, e.Message);
                     RemovePacket();
                     continue;
                 }
 
-                if (pLen > bufLen)
-                {
+                if (pLen > bufLen) {
                     return;
                 }
                 if (pLen <= 3 || pLen == 6) {
                     //ClearBuffer();
                     ShortenBuffer(pLen);
-                    Console.WriteLine("Invalid data packet with Length={0}",pLen);
+                    Console.WriteLine("{0}: Invalid data packet with Length={1}", connString, pLen);
                     continue;
                 }
                 //Console.WriteLine("Read {0} bytes but need {1} bytes, creating object", bufLen, pLen);
@@ -223,7 +221,7 @@ namespace PacketCap
                     }
                     if (className != "Identify")
                     {
-                        Console.WriteLine("Unknown class error {0} {1}", errMsg, connString);
+                        Console.WriteLine("{0}: Unknown class error {0}", connString, errMsg);
                     }
                     else {
                         Console.WriteLine("Identify: [?]");
@@ -233,17 +231,17 @@ namespace PacketCap
                 }
                 catch (System.Runtime.Serialization.SerializationException e)
                 {
-                    Console.WriteLine("The packet wasn't ready: {0}", e.Message);
+                    Console.WriteLine("{0}: The packet wasn't ready {1}", connString, e.Message);
                     RemovePacket();
                 }
                 catch (System.ArgumentOutOfRangeException e)
                 {
-                    Console.WriteLine("The packet was too short: {0}", e.Message);
+                    Console.WriteLine("{0}: The packet was too short: {1}", connString, e.Message);
                     ShortenBuffer(pLen);
                 }
                 catch (System.ArgumentException e)
                 {
-                    Console.WriteLine("Serializing failed bacause a dict was made with 2 identical keys: {0}", e.StackTrace);
+                    Console.WriteLine("{0}: Serializing failed bacause a dict was made with 2 identical keys: {1}", connString, e.StackTrace);
                     ClearBuffer();
                 }
             }

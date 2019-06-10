@@ -537,7 +537,7 @@ namespace PacketCap
         private static List<StatusEffectElement> lastStatusEffects = null;
         private static void PrintStatusEffectUpdated(StatusEffectUpdated msg, object tag)
         {
-            if (lastStatusEffects.Count == 0 && msg.StatusEffects.Count == 0) {
+            if (lastStatusEffects != null && lastStatusEffects.Count == 0 && msg.StatusEffects.Count == 0) {
                 lastStatusEffects = msg.StatusEffects;
                 return;
             }
