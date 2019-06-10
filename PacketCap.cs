@@ -6,6 +6,11 @@ using Devcat.Core.Net.Message;
 using Devcat.Core.Net;
 using System.Text.RegularExpressions;
 using System.Text;
+using PcapDotNet.Packets.Ip;
+using PcapDotNet.Packets.IpV4;
+using PcapDotNet.Packets.IpV6;
+using PcapDotNet.Packets.Transport;
+using PcapDotNet.Packets.Ethernet;
 
 namespace PacketCap
 {
@@ -67,21 +72,33 @@ namespace PacketCap
 
 
         private void HandlePacket(PcapDotNet.Packets.Packet packet,String connString) {
-
-            uint srcPort = ((uint)packet.Buffer[34] << 8) | (uint)packet.Buffer[35];
-            String srcIp = BytesToIpAddr(packet.Buffer, 26);
-
-            int tcpStart = 34;
-
-            //strip tcp header
-            int dataStart = tcpStart + 20;
-            if ((packet.Buffer[tcpStart + 12] >> 4) > 5)
-            {
-                dataStart += (packet.Buffer[tcpStart + 12] >> 4) * 4 - 20;
+            String srcIp = "";
+            TcpDatagram tcp = null;
+            int dataStart = packet.Ethernet.HeaderLength;
+            switch (packet.Ethernet.EtherType) {
+                case EthernetType.IpV4:
+                    IpV4Datagram ip = packet.Ethernet.IpV4;
+                    tcp = ip.Tcp;
+                    srcIp = ip.Source.ToString();
+                    dataStart += ip.HeaderLength + tcp.RealHeaderLength;
+                    break;
+                case EthernetType.IpV6:
+                    IpV6Datagram ip6 = packet.Ethernet.IpV6;
+                    tcp = ip6.Tcp;
+                    srcIp = ip6.Source.ToString();
+                    dataStart += 40 + tcp.RealHeaderLength;
+                    Console.WriteLine("IPv6?");
+                    break;
+                default:
+                    Console.WriteLine("We should never see anything not ipv4 or ipv6 since we filtered by tcp");
+                    return;
             }
+            
+            ushort srcPort = tcp.SourcePort;
+            int dataBytes = tcp.PayloadLength;
+            bool syn = tcp.IsSynchronize;
+            //Console.WriteLine("dataStart={0} dataByes={1} srcPort={2} syn={3} srcIp={4}",dataStart,dataBytes,srcPort,syn,srcIp);
 
-            int dataBytes = packet.Length - dataStart;
-            bool syn = (packet.Buffer[47] & 0b10) == 0b10;
             if (syn && dataBytes == 0)
             {
                 ct = new ServiceCore.CryptoTransformHeroes();
@@ -103,8 +120,8 @@ namespace PacketCap
                 return;
             }
 
-            String timestamp = packet.Timestamp.ToString("yyyy-MM-dd hh:mm:ss.fff");
-            Console.WriteLine("{0}: {1} bytes={2}",timestamp,connString,dataBytes);
+            //String timestamp = packet.Timestamp.ToString("yyyy-MM-dd hh:mm:ss.fff");
+            //Console.WriteLine("{0}: {1} bytes={2}",timestamp,connString,dataBytes);
             
             recvSize.AddLast(dataBytes);
             Buffer.BlockCopy(packet.Buffer, dataStart, buffer, bufLen, dataBytes);
