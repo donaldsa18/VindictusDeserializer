@@ -81,6 +81,10 @@
     <Reference Include="Microsoft.Practices.ObjectBuilder">
       <HintPath>.\Microsoft.Practices.ObjectBuilder.dll</HintPath>
     </Reference>
+    <Reference Include="NEXON, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Bin\NEXON.dll</HintPath>
+    </Reference>
     <Reference Include="nunit.framework">
       <HintPath>.\nunit.framework.dll</HintPath>
     </Reference>
@@ -107,6 +111,7 @@
     <Reference Include="System.Core" />
     <Reference Include="System.Data" />
     <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="System.Drawing" />
     <Reference Include="System.Xml" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="Utility, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
