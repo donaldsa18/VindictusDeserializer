@@ -27,7 +27,9 @@ namespace PacketCap
         public void registerPrinters(MessageHandlerFactory mf, Dictionary<int, Guid> getGuid) {
             this.mf = mf;
             foreach (KeyValuePair<int, Guid> entry in getGuid) {
-                this.categoryDict.Add(entry.Value, entry.Key);
+                if (!this.categoryDict.ContainsKey(entry.Value)) {
+                    this.categoryDict.Add(entry.Value, entry.Key);
+                }
             }
             
             foreach (MethodInfo m in typeof(MessagePrinter).GetMethods(BindingFlags.NonPublic|BindingFlags.Static)) {
@@ -321,7 +323,7 @@ namespace PacketCap
             }
             sb.Append(t);
             sb.Append("Vocation=");
-            sb.Append(VocationToString(c.VocationClass));
+            sb.Append(c.VocationClass.ToString());
 
             if (c.Pet != null)
             {
@@ -588,25 +590,12 @@ namespace PacketCap
             Console.WriteLine("MovePartition: TargetPartitionID={0}", msg.TargetPartitionID);
         }
 
-        private static string SortOrderToString(SortOrder o)
-        {
-            switch (o)
-            {
-                case SortOrder.Level:
-                    return "Level";
-                case SortOrder.Price:
-                    return "Price";
-                default:
-                    return "";
-            }
-        }
-
         private static void PrintTradeItemClassListSearchMessage(TradeItemClassListSearchMessage msg, object tag)
         {
             Console.WriteLine("TradeItemClassListSearchMessage:");
             Console.WriteLine("\tuniqueNumber={0}", msg.uniqueNumber);
             Console.WriteLine("\tChunkPageNumber={0}", msg.ChunkPageNumber);
-            Console.WriteLine("\tOrder={0}", SortOrderToString(msg.Order));
+            Console.WriteLine("\tOrder={0}", msg.Order.ToString());
             Console.WriteLine("\tisDescending={0}", msg.isDescending);
             Console.WriteLine(ListToString<string>(msg.ItemClassList, "ItemClassList", 1));
             Console.WriteLine("\tDetailOptions:");
@@ -630,7 +619,7 @@ namespace PacketCap
             Console.WriteLine("\tmaxLevel={0}", msg.maxLevel);
             Console.WriteLine("\tuniqueNumber={0}", msg.uniqueNumber);
             Console.WriteLine("\tChunkPageNumber={0}", msg.ChunkPageNumber);
-            Console.WriteLine("\tOrder={0}", SortOrderToString(msg.Order));
+            Console.WriteLine("\tOrder={0}", msg.Order.ToString());
             Console.WriteLine("\tisDescending={0}", msg.isDescending);
             Console.WriteLine("\tDetailOptions:");
             foreach (DetailOption d in msg.DetailOptions)
@@ -705,17 +694,7 @@ namespace PacketCap
         private static void PrintSecuredOperationMessage(SecuredOperationMessage msg, object tag) {
             StringBuilder sb = new StringBuilder();
             sb.Append("SecuredOperationMessage: Operation=");
-            switch (msg.Operation) {
-                case SecuredOperationType.Public:
-                    sb.Append("Public ");
-                    break;
-                case SecuredOperationType.OpenCashShopDialog:
-                    sb.Append("OpenCashShopDialog ");
-                    break;
-                case SecuredOperationType.OpenTradeDialog:
-                    sb.Append("OpenTradeDialog ");
-                    break;
-            }
+            sb.Append(msg.Operation.ToString());
             sb.Append("LockedTime=");
             sb.Append(msg.LockedTimeInSeconds);
             Console.WriteLine(sb.ToString());
@@ -734,25 +713,9 @@ namespace PacketCap
             Console.WriteLine(msg.ToString());
         }
 
-        private static string UpdateTypeToString(UpdateHistoryBookMessage.UpdateType t) {
-            switch (t)
-            {
-                case UpdateHistoryBookMessage.UpdateType.Unknown:
-                    return "Unknown";
-                case UpdateHistoryBookMessage.UpdateType.Remove:
-                    return "Remove";
-                case UpdateHistoryBookMessage.UpdateType.Add:
-                    return "Add";
-                case UpdateHistoryBookMessage.UpdateType.Full:
-                    return "Full";
-                default:
-                    return "";
-            }
-        }
-
         private static void PrintUpdateHistoryBookMessage(UpdateHistoryBookMessage msg, object tag) {
             Console.WriteLine("UpdateHistoryBookMessage:");
-            Console.WriteLine("\tType={0}",UpdateTypeToString(msg.Type));
+            Console.WriteLine("\tType={0}",msg.Type.ToString());
 
             String arr = msg.HistoryBooks != null ? String.Join(",", msg.HistoryBooks) : "";
             Console.WriteLine("\tHistoryBooks=[{0}]", arr);
@@ -778,6 +741,7 @@ namespace PacketCap
         }
 
         private static String BaseCharacterToString(BaseCharacter m) {
+            //TODO: add new characters
             String c = "";
             switch ((BaseCharacter)m)
             {
@@ -864,27 +828,8 @@ namespace PacketCap
             Console.WriteLine(msg.ToString());
         }
 
-        private static string EnterHousingTypeToString(EnterHousingType t) {
-            switch (t)
-            {
-                case EnterHousingType.Default:
-                    return "Default";
-                case EnterHousingType.OpenPublic:
-                    return "OpenPublic";
-                case EnterHousingType.OpenPrivate:
-                    return "OpenPrivate";
-                case EnterHousingType.EnterAny:
-                    return "EnterAny";
-                case EnterHousingType.EnterSpecified:
-                    return "EnterSpecified";
-                default:
-                    return "";
-            }
-        }
-
         private static void PrintEnterHousingMessage(EnterHousingMessage msg, object tag) {
-            String housingType = EnterHousingTypeToString(msg.EnterType);
-            Console.WriteLine("EnterHousingMessage: CharacterName={0} HousingIndex={1} EnterType={2} HousingPlayID={3}", msg.CharacterName, msg.HousingIndex, housingType, msg.HousingPlayID);
+            Console.WriteLine("EnterHousingMessage: CharacterName={0} HousingIndex={1} EnterType={2} HousingPlayID={3}", msg.CharacterName, msg.HousingIndex, msg.EnterType.ToString(), msg.HousingPlayID);
         }
         private static void PrintEndPendingDialogMessage(EndPendingDialogMessage msg, object tag) {
             Console.WriteLine("EndPendingDialogMessage []");
@@ -1007,28 +952,8 @@ namespace PacketCap
             Console.WriteLine(msg.ToString());
         }
 
-        private static string AddFriendShipResultMessageToString(AddFriendShipResultMessage.AddFriendShipResult r) {
-            switch (r)
-            {
-                case AddFriendShipResultMessage.AddFriendShipResult.Result_Already_Added:
-                    return "Result_Already_Added";
-                case AddFriendShipResultMessage.AddFriendShipResult.Result_Character_NotFounded:
-                    return "Result_Character_NotFounded";
-                case AddFriendShipResultMessage.AddFriendShipResult.Result_Exception:
-                    return "Result_Exception";
-                case AddFriendShipResultMessage.AddFriendShipResult.Result_FriendCount_Max:
-                    return "Result_FriendCount_Max";
-                case AddFriendShipResultMessage.AddFriendShipResult.Result_Ok:
-                    return "Result_Ok";
-                case AddFriendShipResultMessage.AddFriendShipResult.Result_SameID:
-                    return "Result_SameID";
-                default:
-                    return "";
-            }
-        }
-
         private static void PrintAddFriendShipResultMessage(AddFriendShipResultMessage msg, object tag) {
-            String result = AddFriendShipResultMessageToString((AddFriendShipResultMessage.AddFriendShipResult)msg.Result);
+            String result = ((AddFriendShipResultMessage.AddFriendShipResult)msg.Result).ToString();
             Console.WriteLine("AddFriendShipResultMessage: friendName={0} Result={1}",msg.friendName,result);
         }
 
@@ -1106,28 +1031,8 @@ namespace PacketCap
             Console.WriteLine("LeaveHousingMessage []");
         }
 
-        private static string DecomposeItemResultEXPToString(DecomposeItemResultEXP d) {
-            switch (d)
-            {
-                case DecomposeItemResultEXP.fail:
-                    return "fail";
-                case DecomposeItemResultEXP.increase:
-                    return "increase";
-                case DecomposeItemResultEXP.not_increase:
-                    return "not_increase";
-                case DecomposeItemResultEXP.not_increase_already_max:
-                    return "not_increase_already_max";
-                case DecomposeItemResultEXP.part_extract:
-                    return "part_extract";
-                default:
-                    return "";
-            }
-        }
-
         private static void PrintDecomposeItemResultMessage(DecomposeItemResultMessage msg, object tag) {
-
-            String item = DecomposeItemResultEXPToString(msg.ResultEXP);
-            Console.WriteLine("DecomposeItemResultMessage: ResultEXP={0}",item);
+            Console.WriteLine("DecomposeItemResultMessage: ResultEXP={0}", msg.ResultEXP.ToString());
             Console.WriteLine(ListToString<string>(msg.GiveItemClassList, "GiveItemClassList", 1));
             
         }
@@ -1152,36 +1057,21 @@ namespace PacketCap
             Console.WriteLine("\tHasFreeTitle={0}",msg.HasFreeTitle);
         }
 
-        private static string BlessStoneToString(BlessStoneType t) {
-            switch (t)
-            {
-                case BlessStoneType.NONE:
-                    return "NONE";
-                case BlessStoneType.ALL:
-                    return "ALL";
-                case BlessStoneType.EXP:
-                    return "EXP";
-                case BlessStoneType.LUCK:
-                    return "LUCK";
-                case BlessStoneType.AP:
-                    return "AP";
-                case BlessStoneType.StoneTypeCount:
-                    return "StoneTypeCount";
-                default:
-                    return "";
-            }
-        }
-
         private static void PrintInsertBlessStoneCompleteMessage(InsertBlessStoneCompleteMessage msg, object tag) {
             Console.WriteLine("InsertBlessStoneCompleteMessage:");
             Console.WriteLine("\tSlot={0}",msg.Slot);
-            Console.WriteLine("\tOwnerList=[{0}]",String.Join(",",msg.OwnerList));
-            StringBuilder sb = new StringBuilder();
-            foreach (BlessStoneType t in msg.TypeList) {
-                sb.Append(BlessStoneToString(t));
-                sb.Append(",");
-            }
-            Console.WriteLine("\tTypeList=[{0}]",sb.ToString());
+            Console.WriteLine("\tOwnerList=[{0}]", String.Join(",",msg.OwnerList));
+            Console.WriteLine("\tTypeList=[{0}]", String.Join(",",msg.TypeList));
+            /*StringBuilder sb = new StringBuilder();
+            if (msg.TypeList != null && msg.TypeList.Count != 0) {
+                foreach (BlessStoneType t in msg.TypeList)
+                {
+                    sb.Append(BlessStoneToString(t));
+                    sb.Append(",");
+                }
+                sb.Remove(sb.Length - 1, 1);
+                Console.WriteLine("\tTypeList=[{0}]", sb.ToString());
+            }*/
         }
 
         private static void PrintEnchantLimitlessMessage(EnchantLimitlessMessage msg, object tag) {
@@ -1237,21 +1127,6 @@ namespace PacketCap
 
         private static void PrintSecondPasswordResultMessage(SecondPasswordResultMessage msg, object tag) {
             Console.WriteLine(msg.ToString());
-        }
-
-        private static String VocationToString(VocationEnum v) {
-            switch (v) {
-                case VocationEnum.Invalid:
-                    return "Invalid";
-                case VocationEnum.None:
-                    return "None";
-                case VocationEnum.Paladin:
-                    return "Paladin";
-                case VocationEnum.DarkKnight:
-                    return "DarkKnight";
-                default:
-                    return "";
-            }
         }
 
         private static String DictToString<T1,T2>(IDictionary<T1, T2> dict, String name, int numTabs) {
@@ -1453,29 +1328,9 @@ namespace PacketCap
             Console.WriteLine(msg.ToString());
         }
 
-        private static string BingoResultToString(BingoBoardResultMessage.Bingo_Result r) {
-            switch (r) {
-                case BingoBoardResultMessage.Bingo_Result.Result_Bingo_InitError:
-                    return "Result_Bingo_InitError";
-                case BingoBoardResultMessage.Bingo_Result.Result_Bingo_Expired:
-                    return "Result_Bingo_Expired";
-                case BingoBoardResultMessage.Bingo_Result.Result_Bingo_FeatureOff:
-                    return "Result_Bingo_FeatureOff";
-                case BingoBoardResultMessage.Bingo_Result.Result_Bingo_Ok:
-                    return "Result_Bingo_Ok";
-                case BingoBoardResultMessage.Bingo_Result.Result_Bingo_Completed:
-                    return "Result_Bingo_Completed";
-                case BingoBoardResultMessage.Bingo_Result.Result_Bingo_RewardProcess:
-                    return "Result_Bingo_RewardProcess";
-                case BingoBoardResultMessage.Bingo_Result.Result_Bingo_Loading:
-                    return "Result_Bingo_Loading";
-            }
-            return "";
-        }
-
         private static void PrintBingoBoardResultMessage(BingoBoardResultMessage msg, object tag) {
             Console.WriteLine("BingoBoardResultMessage:");
-            Console.WriteLine("\tResult={0}", BingoResultToString((BingoBoardResultMessage.Bingo_Result)msg.Result));
+            Console.WriteLine("\tResult={0}", ((BingoBoardResultMessage.Bingo_Result)msg.Result).ToString());
             Console.WriteLine("\tBingoBoardNumbers=[{0}]", String.Join(",", msg.BingoBoardNumbers));
         }
 

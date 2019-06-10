@@ -22,14 +22,13 @@ namespace PacketCap
         private int bufLen = 0;
         private LinkedList<int> recvSize = new LinkedList<int>();
 
-        private Dictionary<int, String> classNames = new Dictionary<int, String>();
-        public Dictionary<int, Guid> getGuid = new Dictionary<int, Guid>();
-
         private ICryptoTransform ct = null;
 
+        private static Dictionary<int, String> classNames = new Dictionary<int, String>();
+        public static Dictionary<int, Guid> getGuid = new Dictionary<int, Guid>();
 
-        private MessageHandlerFactory mf = new  MessageHandlerFactory();
-        private MessagePrinter mp = new MessagePrinter();
+        public static MessageHandlerFactory mf = new  MessageHandlerFactory();
+        private static MessagePrinter mp = new MessagePrinter();
         
         internal bool sawSyn { get; private set; }
         
@@ -49,8 +48,8 @@ namespace PacketCap
 
         static void Main(string[] args)
         {
-            PacketDevice selectedDevice = getDevice();
-
+            PacketDevice selectedDevice = GetDevice();
+            
             //Open the device with a 65kB buffer, promiscuous mode, 1s timeout
             using (PacketCommunicator communicator = selectedDevice.Open(65536,PacketDeviceOpenAttributes.Promiscuous,1000))
             {
@@ -65,7 +64,7 @@ namespace PacketCap
 
         private static void HandlePacketPort(PcapDotNet.Packets.Packet packet)
         {
-            string connString = getConnString(packet);
+            string connString = GetConnString(packet);
             if (portHandler.TryGetValue(connString, out PacketCap cap))
             {
                 cap.HandlePacket(packet);
@@ -112,7 +111,7 @@ namespace PacketCap
             {
                 ct = new ServiceCore.CryptoTransformHeroes();
                 ClearBuffer();
-                encrypt = !anySynSeen();
+                encrypt = !AnySynSeen();
                 Console.WriteLine("TCP connection starting{0}",encrypt?" with encryption" : "");
                 sawSyn = true;
                 return;
@@ -166,7 +165,7 @@ namespace PacketCap
                 }
                 catch (System.Runtime.Serialization.SerializationException e)
                 {
-                    Console.WriteLine("bufLen={0} recvSize={1}", bufLen, recvSizeToString());
+                    Console.WriteLine("bufLen={0} recvSize={1}", bufLen, RecvSizeToString());
                     Console.WriteLine("Bad length {0}", e.Message);//this was the original code
                     RemovePacket();
                     continue;
@@ -197,11 +196,11 @@ namespace PacketCap
                     }
                     if (classNames.Count == 0)
                     {
-                        processTypeConverter(p);
+                        ProcessTypeConverter(p);
                         Console.WriteLine("Received TypeConverter");
-                        String reverse = reverseConnString(connString);
-                        Console.WriteLine("Sending TypeConverter to Client {0}",reverse);
-                        portHandler[reverse].processTypeConverter(p);
+                        //String reverse = reverseConnString(connString);
+                        //Console.WriteLine("Sending TypeConverter to Client {0}",reverse);
+                        //portHandler[reverse].processTypeConverter(p);
                     }
                     else
                     {
@@ -212,14 +211,24 @@ namespace PacketCap
                 catch (InvalidOperationException e)
                 {
                     String errMsg = e.Message;
-                    Console.WriteLine("Unknown class error {0} {1}", errMsg, connString);
+                    String className = "";
                     MatchCollection mc = Regex.Matches(errMsg, @"\.([^,\.]{2,}),");
                     foreach (Match m in mc)
                     {
-                        String className = m.Groups[1].ToString();
-                        String methodStr = genMethodString(className);
-                        FileLog.Log("unhandled.log", methodStr);
+                        className = m.Groups[1].ToString();
+                        if (className != "Identify") {
+                            String methodStr = GenMethodString(className);
+                            FileLog.Log("unhandled.log", methodStr);
+                        }
                     }
+                    if (className != "Identify")
+                    {
+                        Console.WriteLine("Unknown class error {0} {1}", errMsg, connString);
+                    }
+                    else {
+                        Console.WriteLine("Identify: [?]");
+                    }
+                    
                     ShortenBuffer(pLen);
                 }
                 catch (System.Runtime.Serialization.SerializationException e)
@@ -239,7 +248,7 @@ namespace PacketCap
                 }
             }
         }
-        private static string genMethodString(string className) {
+        private static string GenMethodString(string className) {
             StringBuilder sb = new StringBuilder();
             sb.Append("\nprivate static void Print");
             sb.Append(className);
@@ -280,14 +289,15 @@ namespace PacketCap
             }
         }
 
-        public void processTypeConverter(Devcat.Core.Net.Message.Packet p) {
+        public void ProcessTypeConverter(Devcat.Core.Net.Message.Packet p)
+        {
             SerializeReader.FromBinary<Object>(p, out Object obj);
             SetupDicts(obj.ToString());
             mf.Handle(p, null);
             mp.registerPrinters(mf, getGuid);
         }
 
-        private static String reverseConnString(String connString) {
+        private static String ReverseConnString(String connString) {
             String[] parts = connString.Split(' ');
             StringBuilder sb = new StringBuilder();
             //'IP:Port','to','IP:port'
@@ -297,7 +307,7 @@ namespace PacketCap
             return sb.ToString();
         }
 
-        private static string getConnString(PcapDotNet.Packets.Packet packet) {
+        private static string GetConnString(PcapDotNet.Packets.Packet packet) {
             String srcIp = "";
             String dstIp = "";
             TcpDatagram tcp = null;
@@ -347,7 +357,7 @@ namespace PacketCap
             return addr.ToString();
         }
 
-        private String recvSizeToString() {
+        private String RecvSizeToString() {
             StringBuilder sb = new StringBuilder();
             sb.Append("[");
             foreach (int cur in recvSize) {
@@ -361,14 +371,19 @@ namespace PacketCap
             return sb.ToString();
         }
 
-        private bool anySynSeen() {
+        private bool AnySynSeen() {
             int numSyn = 0;
             foreach (KeyValuePair<string,PacketCap> entry in portHandler) {
                 if (entry.Value.sawSyn) {
                     numSyn++;
                 }
             }
-            return numSyn > 1;
+            //0 -> no
+            //1 -> no
+            //2 -> yes
+            //3 -> yes
+            //4 -> no
+            return 1 < numSyn && numSyn < 4;
         }
 
         private void SetupDicts(String contents)
@@ -382,13 +397,21 @@ namespace PacketCap
                     int categoryId = int.Parse(m.Groups[1].ToString(), System.Globalization.NumberStyles.HexNumber);
                     String className = m.Groups[2].ToString();
                     Guid guid = Guid.Parse(m.Groups[3].ToString());
-                    classNames.Add(categoryId, className);
+                    if (classNames.TryGetValue(categoryId, out string dictClassName)) {
+                        if (dictClassName != null && dictClassName != className) {
+                            Console.WriteLine("Error! Conflicting types going to dictionaries, please remove the static keyword");
+                        }
+                    }
+                    else {
+                        classNames.Add(categoryId, className);
+                    }
+                    
                     getGuid.Add(categoryId, guid);
                     loaded.Add(String.Format("{0} {1}",className,guid.ToString()), false);
                 }
             }
         }
-        private static PacketDevice getDevice() {
+        private static PacketDevice GetDevice() {
             IList<LivePacketDevice> allDevices = LivePacketDevice.AllLocalMachine;
             if (allDevices.Count == 0)
             {
