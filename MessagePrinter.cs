@@ -1144,9 +1144,11 @@ namespace PacketCap
         private static string ListToString<T>(ICollection<T> list, String name, int numTabs) {
             StringBuilder sb = new StringBuilder();
             String t = new string('\t', numTabs);
-            sb.Append(t);
-            sb.Append(name);
-            sb.Append(":\n");
+            if (name != null && name.Length != 0) {
+                sb.Append(t);
+                sb.Append(name);
+                sb.Append(":\n");
+            }
             if (list == null) {
                 return sb.ToString();
             }
@@ -1879,7 +1881,21 @@ namespace PacketCap
 
         private static void PrintSectorPropListMessage(SectorPropListMessage msg, object tag)
         {
-            Console.WriteLine(DictToString<int, int>(msg.Props, "SectorPropListMessage", 0));
+            if (msg == null || msg.Props.Count == 0) {
+                return;
+            }
+            StringBuilder sb = new StringBuilder();
+            sb.Append("SectorPropListMessage: [");
+            foreach (KeyValuePair<int, int> entry in msg.Props) {
+                sb.Append(entry.Key);
+                sb.Append("=");
+                sb.Append(entry.Value);
+                sb.Append(", ");
+            }
+            
+            sb.Remove(sb.Length - 2, 2);
+            sb.Append("]");
+            Console.WriteLine(sb.ToString());
         }
 
         private static void PrintMoveToNextSectorMessage(MoveToNextSectorMessage msg, object tag)
@@ -2053,6 +2069,32 @@ namespace PacketCap
         private static void PrintMonsterKilledMessage(MonsterKilledMessage msg, object tag)
         {
             Console.WriteLine(msg.ToString());
+        }
+
+        private static void PrintExecuteNpcServerCommandMessage(ExecuteNpcServerCommandMessage msg, object tag)
+        {
+            Console.WriteLine("ExecuteNpcServerCommandMessage: []");
+        }
+
+        private static void PrintRagdollKickedMessage(RagdollKickedMessage msg, object tag)
+        {
+            Console.WriteLine(msg.ToString());
+        }
+
+        private static void PrintCombatRecordMessage(CombatRecordMessage msg, object tag)
+        {
+            Console.WriteLine(msg.ToString());
+        }
+
+        private static void PrintMicroPlayEventMessage(MicroPlayEventMessage msg, object tag)
+        {
+            Console.WriteLine(msg.ToString());
+        }
+
+        private static void PrintMonsterDamageReportMessage(MonsterDamageReportMessage msg, object tag)
+        {
+            Console.WriteLine("MonsterDamageReportMessage: Target={0}");
+            Console.WriteLine(ListToString(msg.TakeDamageList, "", 0));
         }
     }
 }
