@@ -27,9 +27,7 @@ namespace PacketCap
         public void registerPrinters(MessageHandlerFactory mf, Dictionary<int, Guid> getGuid) {
             this.mf = mf;
             foreach (KeyValuePair<int, Guid> entry in getGuid) {
-                if (!this.categoryDict.ContainsKey(entry.Value)) {
-                    this.categoryDict.Add(entry.Value, entry.Key);
-                }
+                categoryDict[entry.Value] = entry.Key;
             }
             
             foreach (MethodInfo m in typeof(MessagePrinter).GetMethods(BindingFlags.NonPublic|BindingFlags.Static)) {
