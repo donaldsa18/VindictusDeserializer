@@ -192,7 +192,7 @@ namespace PacketCap
                     encryptDict.TryGetValue(srcPort, out encrypt);
                     serviceDict.TryGetValue(srcPort, out serviceType);
                 }
-                Console.WriteLine("TCP connection starting with type {0}", encrypt);
+                Console.WriteLine("TCP connection starting with type {0} to {1}", encrypt, serviceType);
                 sawSyn = true;
                 return;
             }
@@ -202,7 +202,7 @@ namespace PacketCap
                 return;
             }
             if (encrypt == EncryptionType.Relay || encrypt == EncryptionType.Pipe) {
-                Console.WriteLine("Cannot handle type {0}",encrypt);
+                //Console.WriteLine("Cannot handle type {0}",encrypt);
                 return;
             }
             if (dataBytes == 6 || dataBytes == 0) {

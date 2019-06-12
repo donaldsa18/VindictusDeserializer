@@ -334,17 +334,17 @@ namespace PacketCap
                 sb.Append("VIPCode=");
                 sb.Append(c.VIPCode);
             }
-            String temp = CharacterDictToString<int>(c.CostumeTypeInfo, "CostumeTypeInfo", numTabs, l?.CostumeTypeInfo);
+            String temp = CharacterDictToString<int>(c.CostumeTypeInfo, "CostumeTypeInfo", numTabs+1, l?.CostumeTypeInfo);
             if (temp.Length != 0) {
                 sb.Append("\n");
                 sb.Append(temp);
             }
-            temp = ColorDictToString(c.ColorInfo, "ColorInfo", numTabs, l?.ColorInfo);
+            temp = ColorDictToString(c.ColorInfo, "ColorInfo", numTabs+1, l?.ColorInfo);
             if (temp.Length != 0) {
                 sb.Append("\n");
                 sb.Append(temp);
             }
-            temp = CharacterDictToString<bool>(c.AvatarInfo, "AvatarInfo", numTabs, l?.AvatarInfo);
+            temp = CharacterDictToString<bool>(c.AvatarInfo, "AvatarInfo", numTabs+1, l?.AvatarInfo);
             if (temp.Length != 0) {
                 sb.Append("\n");
                 sb.Append(temp);
@@ -352,18 +352,18 @@ namespace PacketCap
             
             if (l?.AvatarHideInfo != null && c.AvatarHideInfo.Count != 0)
             {
-                temp = CharacterDictToString<int>(c.AvatarHideInfo, "AvatarHideInfo", numTabs, l?.AvatarHideInfo);
+                temp = CharacterDictToString<int>(c.AvatarHideInfo, "AvatarHideInfo", numTabs+1, l?.AvatarHideInfo);
                 if (temp.Length != 0) {
                     sb.Append("\n");
                     sb.Append(temp);
                 }
             }
-            temp = CharacterDictToString<byte>(c.PollutionInfo, "PollutionInfo", numTabs, l?.PollutionInfo);
+            temp = CharacterDictToString<byte>(c.PollutionInfo, "PollutionInfo", numTabs+1, l?.PollutionInfo);
             if (temp.Length != 0) {
                 sb.Append("\n");
                 sb.Append(temp);
             }
-            temp = CharacterDictToString<int>(c.EffectInfo, "EffectInfo", numTabs, l?.EffectInfo);
+            temp = CharacterDictToString<int>(c.EffectInfo, "EffectInfo", numTabs+1, l?.EffectInfo);
             if (temp.Length != 0) {
                 sb.Append("\n");
                 sb.Append(temp);
@@ -409,7 +409,7 @@ namespace PacketCap
                 sb.Append(sb2.ToString());
             }
             sb.Append("\n");
-            sb.Append(BodyShapeInfoToString(c.BodyShapeInfo, numTabs,l?.BodyShapeInfo));
+            sb.Append(BodyShapeInfoToString(c.BodyShapeInfo, numTabs+1,l?.BodyShapeInfo));
 
             
             costumeInfos[name] = c;
@@ -1156,13 +1156,17 @@ namespace PacketCap
 
         private static string ListToString<T>(ICollection<T> list, String name, int numTabs) {
             StringBuilder sb = new StringBuilder();
-            String t = new string('\t', numTabs);
+            String t = "";
+            if (numTabs > 0) {
+                t = new string('\t', numTabs);
+            }
+                
             if (name != null && name.Length != 0) {
                 sb.Append(t);
                 sb.Append(name);
                 sb.Append(":\n");
             }
-            if (list == null) {
+            if (list == null || list.Count == 0) {
                 return sb.ToString();
             }
             t = new string('\t', numTabs+1);
@@ -1174,6 +1178,7 @@ namespace PacketCap
                 sb.Append(element);
                 sb.Append("\n");
             }
+            sb.Remove(sb.Length - 1, 1);
             return sb.ToString();
         }
 
@@ -1468,9 +1473,13 @@ namespace PacketCap
 
         private static String DictToString<T1, T2>(IDictionary<T1, T2> dict, String name, int numTabs, IDictionary<T1, T2> lastDict)
         {
-            String t = new string('\t', numTabs);
             StringBuilder sb = new StringBuilder();
-            sb.Append(t);
+            String t = "";
+            if (numTabs > 0) {
+                t = new string('\t', numTabs);
+                sb.Append(t);
+            }
+
             t = new string('\t', numTabs + 1);
             sb.Append(name);
             sb.Append(":");
@@ -1501,9 +1510,13 @@ namespace PacketCap
         }
 
         private static String DictToString<T1,T2>(IDictionary<T1, T2> dict, String name, int numTabs) {
-            String t = new string('\t', numTabs);
             StringBuilder sb = new StringBuilder();
-            sb.Append(t);
+            String t = "";
+            if (numTabs > 0)
+            {
+                t = new string('\t', numTabs);
+                sb.Append(t);
+            }
             t = new string('\t', numTabs+1);
             sb.Append(name);
             sb.Append(":\n");
@@ -1590,7 +1603,8 @@ namespace PacketCap
 
         private static IDictionary<string, int> lastStats = null;
         private static void PrintUpdateStatMessage(UpdateStatMessage msg, object tag) {
-            Console.WriteLine(DictToString<string, int>(msg.Stat, "UpdateStatMessage",0,lastStats));
+            Console.WriteLine(DictToString<string, int>(msg.Stat, "UpdateStatMessage", 0, lastStats));
+            
             lastStats = msg.Stat;
         }
 
@@ -1931,10 +1945,10 @@ namespace PacketCap
                 sb.Append(entry.Key);
                 sb.Append("=");
                 sb.Append(entry.Value);
-                sb.Append(", ");
+                sb.Append(",");
             }
             
-            sb.Remove(sb.Length - 2, 2);
+            sb.Remove(sb.Length - 1, 1);
             sb.Append("]");
             Console.WriteLine(sb.ToString());
         }
@@ -2163,41 +2177,100 @@ namespace PacketCap
             Console.WriteLine(ListToString(msg.TakeDamageList, "", 0));
         }
 
-        private static string PartyMemberInfoToString(PartyMemberInfo m, int i) {
+        private static Dictionary<int,PartyMemberInfo> lastPartyMember = new Dictionary<int,PartyMemberInfo>();
+
+        private static string PartyMemberInfoToString(PartyMemberInfo m, String name, int numTabs) {
+            String t = "";
+            if (numTabs > 0) {
+                t = new string('\t',numTabs);
+            }
             StringBuilder sb = new StringBuilder();
-            sb.AppendFormat("\tMember[{0}]:", i++);
-            sb.AppendFormat("\t\tNexonSN={0}", m.NexonSN);
-            sb.AppendFormat("\t\tCharacter={0}", BaseCharacterToString(m.Character));
-            sb.AppendFormat("\t\tCharacterID={0}", m.CharacterID);
-            sb.AppendFormat("\t\tSlotNum={0}", m.SlotNum);
-            sb.AppendFormat("\t\tLevel={0}", m.Level);
-            sb.AppendFormat("\t\tState={0}", m.State);
-            sb.AppendFormat("\t\tLatestPing={0}", m.LatestPing);
-            sb.AppendFormat("\t\tLatestFrameRate={0}", m.LatestFrameRate);
-            sb.AppendFormat("\t\tIsReturn={0}", m.IsReturn);
-            sb.AppendFormat("\t\tIsEventJumping={0}", m.IsEventJumping);
+            sb.Append(t);
+            sb.Append(name);
+            sb.Append(":");
+            t = "\n"+new string('\t', numTabs);
+            sb.Append(t);
+            sb.Append("CharacterID=");
+            sb.Append(m.CharacterID);
+
+            PartyMemberInfo last = null;
+            lastPartyMember.TryGetValue(m.NexonSN, out last);
+            
+            if (lastParty == null || m.CharacterID != last.CharacterID)
+            {
+                sb.Append(t);
+                sb.Append("Character=");
+                sb.Append(BaseCharacterToString(m.Character));
+                sb.Append(t);
+                sb.Append("NexonSN=");
+                sb.Append(m.NexonSN);
+                sb.Append(t);
+                sb.Append("Level=");
+                sb.Append(m.Level);
+            }
+            if (lastParty == null || m.SlotNum != last.SlotNum)
+            {
+                sb.Append(t);
+                sb.Append("SlotNum=");
+                sb.Append(m.SlotNum);
+            }
+            if (lastParty == null || m.State != last.State)
+            {
+                sb.Append(t);
+                sb.AppendFormat("State=");
+                sb.Append(m.State);
+            }
+            if (lastParty == null || m.LatestPing != last.LatestPing) {
+                sb.Append(t);
+                sb.Append("LatestPing=");
+                sb.Append(m.LatestPing);
+            }
+            if (lastParty == null || m.LatestFrameRate != last.LatestFrameRate)
+            {
+                sb.Append(t);
+                sb.Append("LatestFrameRate=");
+                sb.Append(m.LatestFrameRate);
+            }
+            if (lastParty == null || m.IsReturn != last.IsReturn)
+            {
+                sb.Append(t);
+                sb.Append("IsReturn=");
+                sb.Append(m.IsReturn);
+            }
+            if (lastParty == null || m.IsEventJumping != last.IsEventJumping)
+            {
+                sb.Append(t);
+                sb.Append("IsEventJumping=");
+                sb.Append(m.IsEventJumping);
+            }
+            lastPartyMember[m.NexonSN] = m;
             return sb.ToString();
         }
 
+        private static PartyInfoMessage lastParty = null;
+
         private static void PrintPartyInfoMessage(PartyInfoMessage msg, object tag) {
             Console.WriteLine("PartyInfoMessage:");
-            Console.WriteLine("\tPartyID={0}",msg.PartyID);
-            Console.WriteLine("\tPartySize={0}",msg.PartySize);
-            Console.WriteLine("\tState={0}",msg.State);
-            int i = 0;
-            foreach (PartyMemberInfo m in msg.Members) {
-                Console.WriteLine("\tMember[{0}]:",i++);
-                Console.WriteLine("\t\tNexonSN={0}",m.NexonSN);
-                Console.WriteLine("\t\tCharacter={0}",BaseCharacterToString(m.Character));
-                Console.WriteLine("\t\tCharacterID={0}",m.CharacterID);
-                Console.WriteLine("\t\tSlotNum={0}",m.SlotNum);
-                Console.WriteLine("\t\tLevel={0}",m.Level);
-                Console.WriteLine("\t\tState={0}",m.State);
-                Console.WriteLine("\t\tLatestPing={0}",m.LatestPing);
-                Console.WriteLine("\t\tLatestFrameRate={0}",m.LatestFrameRate);
-                Console.WriteLine("\t\tIsReturn={0}",m.IsReturn);
-                Console.WriteLine("\t\tIsEventJumping={0}",m.IsEventJumping);
+
+            //don't want to show a diff between two different parties
+            if (lastParty != null && lastParty.PartyID != msg.PartyID) {
+                lastParty = null;
             }
+            Console.WriteLine("\tPartyID={0}",msg.PartyID);
+            if (lastParty != null && lastParty.PartySize != msg.PartySize)
+            {
+                Console.WriteLine("\tPartySize={0}", msg.PartySize);
+            }
+            if (lastParty != null && msg.State != lastParty.State) {
+                Console.WriteLine("\tState={0}", msg.State);
+            }
+            
+            int i = 0;
+            PartyMemberInfo[] lastList = lastParty.Members.ToArray();
+            foreach (PartyMemberInfo m in msg.Members) {
+                Console.WriteLine(PartyMemberInfoToString(m, String.Format("Member[{0}]:", i++), 1));
+            }
+            lastParty = msg;
         }
 
         private static T GetPrivateProperty<T>(Object msg, string propName) {
@@ -2211,8 +2284,6 @@ namespace PacketCap
             return default(T);
         }
 
-
-
         private static void PrintUpdateShipMessage(UpdateShipMessage msg, object tag) {
             //need to use reflection to access the ShipInfo object
             ShipInfo s = GetPrivateProperty<ShipInfo>(msg, "info");
@@ -2224,7 +2295,7 @@ namespace PacketCap
             Console.WriteLine("\tMaxLevelConstraint={0}", s.MaxLevelConstraint);
             Console.WriteLine("\tMemberCount={0}", s.MemberCount);
             Console.WriteLine("\tMaxShipMemberCount={0}", s.MaxShipMemberCount);
-            Console.WriteLine("\tstringQuestID={0}", s.QuestID);
+            Console.WriteLine("\tQuestID={0}", s.QuestID);
             Console.WriteLine("\tIsHuntingQuest={0}", s.IsHuntingQuest);
             Console.WriteLine("\tIsGiantRaid={0}", s.IsGiantRaid);
             Console.WriteLine("\tSwearID={0}", s.SwearID);
@@ -2242,14 +2313,11 @@ namespace PacketCap
             Console.WriteLine("\tIsSeason={0}", s.IsSeason2);
             Console.WriteLine("\tIsPracticeMode={0}", s.IsPracticeMode);
             Console.WriteLine("\tUserDSMode={0}", s.UserDSMode);
-            Console.WriteLine("\tselectedBossQuestIDInfos={0}", String.Join(",", s.selectedBossQuestIDInfos));
+            Console.WriteLine("\tSelectedBossQuestIDInfos={0}", String.Join(",", s.selectedBossQuestIDInfos));
             int i = 0;
             foreach (PartyMemberInfo m in s.Members) {
-                Console.WriteLine(PartyMemberInfoToString(m,i++));
+                Console.WriteLine(PartyMemberInfoToString(m,String.Format("Member[{0}]",i++),1));
             }
-            //could get an infinite loop if I tried to parse this fully
-            Console.WriteLine("\tShipList=[{0}]",String.Join(",",s.ShipListNode.List));
-            
         }
 
         private static void PrintPayCoinCompletedMessage(PayCoinCompletedMessage msg, object tag) {
