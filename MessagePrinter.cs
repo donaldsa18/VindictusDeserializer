@@ -400,14 +400,14 @@ namespace PacketCap
                 sb2.Append(IntToRGB(entry.Value));
                 
             }
-
+            
             if (sb2.Length != 0) {
-                sb2.Append("\n");
+                sb.Append("\n");
                 sb.Append(t1);
                 sb.Append("DecorationColorInfo:");
                 sb.Append(sb2.ToString());
             }
-
+            sb.Append("\n");
             sb.Append(BodyShapeInfoToString(c.BodyShapeInfo, numTabs,l?.BodyShapeInfo));
 
             

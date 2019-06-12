@@ -31,18 +31,82 @@ namespace PacketCap
         private static MessagePrinter mp = new MessagePrinter();
         
         internal bool sawSyn { get; private set; }
-        
-        private bool encrypt;
 
         private static Dictionary<string, PacketCap> portHandler = new Dictionary<string, PacketCap>();
 
         private static string myIp = "";
 
-        private static string filter = "host 192.168.0.200 and tcp portrange 27000-27015";
+        private static string filter = "host 192.168.0.200 and tcp portrange 27000-29000";
 
         private string connString;
 
         private static HashSet<string> unhandledTypes = new HashSet<string>();
+
+        private EncryptionType encrypt = EncryptionType.Normal;
+
+        private static Dictionary<int, EncryptionType> encryptDict = new Dictionary<int, EncryptionType>()
+        {
+            [27003] = EncryptionType.None,
+            [27005] = EncryptionType.Relay,
+            [27015] = EncryptionType.Normal,
+            [27017] = EncryptionType.Relay,
+            [27018] = EncryptionType.Normal,
+            [28018] = EncryptionType.Normal,
+            [42] = EncryptionType.Pipe
+        };
+
+        private ServiceType serviceType = ServiceType.FrontendService;
+
+        private static Dictionary<int, ServiceType> serviceDict = new Dictionary<int, ServiceType>()
+        {
+            [27011] = ServiceType.AdminClientService,
+            [14417] = ServiceType.AdminClientService,
+            [14418] = ServiceType.CashShopService,
+            [27018] = ServiceType.DSService,
+            [14423] = ServiceType.DSService,
+            [27015] = ServiceType.FrontendService,
+            [14415] = ServiceType.FrontendService,
+            [14416] = ServiceType.FrontendService,
+            [14420] = ServiceType.GuildService,
+            [14421] = ServiceType.LoginService,
+            [27005] = ServiceType.MicroPlayService,
+            [14427] = ServiceType.MicroPlayService,
+            [27003] = ServiceType.MMOChannelService,
+            [14424] = ServiceType.MMOChannelService,
+            [14426] = ServiceType.PingService,
+            [27017] = ServiceType.PingService,
+            [14428] = ServiceType.PlayerService,
+            [27006] = ServiceType.PvpService,
+            [14425] = ServiceType.PvpService,
+            [14422] = ServiceType.RankService,
+            [42] = ServiceType.LocationService,
+            [14419] = ServiceType.UserDSHostService,
+            [28018] = ServiceType.UserDSHostService,
+        };
+
+        private enum ServiceType {
+            AdminClientService,
+            CashShopService,
+            DSService,
+            FrontendService,
+            GuildService,
+            LoginService,
+            MicroPlayService,
+            MMOChannelService,
+            PingService,
+            PlayerService,
+            PvpService,
+            RankService,
+            LocationService,
+            UserDSHostService
+        }
+
+        private enum EncryptionType {
+            None,
+            Normal,
+            Relay,
+            Pipe
+        }
 
         private int numErrors = 0;
         public PacketCap(string connString) {
@@ -118,8 +182,17 @@ namespace PacketCap
             {
                 ct = new ServiceCore.CryptoTransformHeroes();
                 ClearBuffer();
-                encrypt = !AnySynSeen();
-                Console.WriteLine("TCP connection starting{0}",encrypt?" with encryption" : "");
+                if (myIp == srcIp)
+                {
+                    int dstPort = tcp.DestinationPort;
+                    encryptDict.TryGetValue(dstPort, out encrypt);
+                    serviceDict.TryGetValue(dstPort, out serviceType);
+                }
+                else {
+                    encryptDict.TryGetValue(srcPort, out encrypt);
+                    serviceDict.TryGetValue(srcPort, out serviceType);
+                }
+                Console.WriteLine("TCP connection starting with type {0}", encrypt);
                 sawSyn = true;
                 return;
             }
@@ -128,9 +201,12 @@ namespace PacketCap
                 Console.WriteLine("Haven't seen SYN yet from {0}", srcPort);
                 return;
             }
-            
+            if (encrypt == EncryptionType.Relay || encrypt == EncryptionType.Pipe) {
+                Console.WriteLine("Cannot handle type {0}",encrypt);
+                return;
+            }
             if (dataBytes == 6 || dataBytes == 0) {
-                //Console.WriteLine("Ping from port {0}",srcPort);
+                Console.WriteLine("Ping from port {0}",srcPort);
                 ClearBuffer();
                 return;
             }
@@ -143,7 +219,7 @@ namespace PacketCap
 
             ArraySegment<byte> dataSeg = new ArraySegment<byte>(buffer, bufLen, dataBytes);
             Devcat.Core.Net.Message.Packet p = new Devcat.Core.Net.Message.Packet(dataSeg);
-            if (encrypt) {
+            if (encrypt == EncryptionType.Normal) {
                 long salt = p.InstanceId;
                 ct.Decrypt(dataSeg, salt);
             }
@@ -193,13 +269,13 @@ namespace PacketCap
                 p = new Devcat.Core.Net.Message.Packet(dataSeg);
                 try
                 {
-                    //Console.WriteLine(p);
+                    Console.WriteLine(p);
                     if (srcIp == myIp)
                     {
-                        Console.WriteLine("Client:");
+                        Console.WriteLine("Client->{0}:",serviceType);
                     }
                     else {
-                        Console.WriteLine("Server:");
+                        Console.WriteLine("Server {0}:",serviceType);
                     }
                     if (classNames.Count == 0)
                     {
@@ -231,7 +307,7 @@ namespace PacketCap
                     }
                     if (className != "Identify")
                     {
-                        Console.WriteLine("{0}: Unknown class error {0}", connString, errMsg);
+                        Console.WriteLine("{0}: Unknown class error {1}", connString, errMsg);
                     }
                     else {
                         Console.WriteLine("Identify: [?]");
@@ -380,20 +456,6 @@ namespace PacketCap
             }
             sb.Append("]");
             return sb.ToString();
-        }
-
-        private bool AnySynSeen() {
-            int numSyn = 0;
-            foreach (KeyValuePair<string,PacketCap> entry in portHandler) {
-                if (entry.Value.sawSyn) {
-                    numSyn++;
-                }
-            }
-            //0 -> no
-            //1 -> no
-            //2 -> yes
-            //3 -> yes
-            return 1 < numSyn;
         }
 
         private void SetupDicts(String contents)
