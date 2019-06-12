@@ -295,23 +295,24 @@ namespace PacketCap
                 {
                     String errMsg = e.Message;
                     String className = "";
+                    if (classNames.TryGetValue(p.CategoryId, out className) && !unhandledTypes.Contains(className)) {
+                        String methodStr = GenMethodString(className);
+                        FileLog.Log("unhandled.log", methodStr);
+                        unhandledTypes.Add(className);
+                        Console.WriteLine("{0}: Handler missing for class {1}", connString, className);
+                        return;
+                    }
                     MatchCollection mc = Regex.Matches(errMsg, @"\.([^,\.]{2,}),");
                     foreach (Match m in mc)
                     {
                         className = m.Groups[1].ToString();
-                        if (className != "Identify" && !unhandledTypes.Contains(className)) {
+                        if (!unhandledTypes.Contains(className)) {
                             String methodStr = GenMethodString(className);
                             FileLog.Log("unhandled.log", methodStr);
                             unhandledTypes.Add(className);
                         }
                     }
-                    if (className != "Identify")
-                    {
-                        Console.WriteLine("{0}: Unknown class error {1}", connString, errMsg);
-                    }
-                    else {
-                        Console.WriteLine("Identify: [?]");
-                    }
+                    Console.WriteLine("{0}: Unknown class error {1}", connString, errMsg);
                     
                     ShortenBuffer(pLen);
                 }

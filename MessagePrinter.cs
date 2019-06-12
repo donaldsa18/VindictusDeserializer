@@ -757,7 +757,7 @@ namespace PacketCap
 
         private static void PrintRequestJoinPartyMessage(RequestJoinPartyMessage msg, object tag)
         {
-            Console.WriteLine(msg.ToString());
+            Console.WriteLine("RequestJoinPartyMessage: RequestType={0}",msg.RequestType);
         }
 
         private static ActionSync emptyActionSync = new ActionSync();
@@ -2093,6 +2093,119 @@ namespace PacketCap
         {
             Console.WriteLine("MonsterDamageReportMessage: Target={0}");
             Console.WriteLine(ListToString(msg.TakeDamageList, "", 0));
+        }
+
+        private static string PartyMemberInfoToString(PartyMemberInfo m, int i) {
+            StringBuilder sb = new StringBuilder();
+            sb.AppendFormat("\tMember[{0}]:", i++);
+            sb.AppendFormat("\t\tNexonSN={0}", m.NexonSN);
+            sb.AppendFormat("\t\tCharacter={0}", BaseCharacterToString(m.Character));
+            sb.AppendFormat("\t\tCharacterID={0}", m.CharacterID);
+            sb.AppendFormat("\t\tSlotNum={0}", m.SlotNum);
+            sb.AppendFormat("\t\tLevel={0}", m.Level);
+            sb.AppendFormat("\t\tState={0}", m.State);
+            sb.AppendFormat("\t\tLatestPing={0}", m.LatestPing);
+            sb.AppendFormat("\t\tLatestFrameRate={0}", m.LatestFrameRate);
+            sb.AppendFormat("\t\tIsReturn={0}", m.IsReturn);
+            sb.AppendFormat("\t\tIsEventJumping={0}", m.IsEventJumping);
+            return sb.ToString();
+        }
+
+        private static void PrintPartyInfoMessage(PartyInfoMessage msg, object tag) {
+            Console.WriteLine("PartyInfoMessage:");
+            Console.WriteLine("\tPartyID={0}",msg.PartyID);
+            Console.WriteLine("\tPartySize={0}",msg.PartySize);
+            Console.WriteLine("\tState={0}",msg.State);
+            int i = 0;
+            foreach (PartyMemberInfo m in msg.Members) {
+                Console.WriteLine("\tMember[{0}]:",i++);
+                Console.WriteLine("\t\tNexonSN={0}",m.NexonSN);
+                Console.WriteLine("\t\tCharacter={0}",BaseCharacterToString(m.Character));
+                Console.WriteLine("\t\tCharacterID={0}",m.CharacterID);
+                Console.WriteLine("\t\tSlotNum={0}",m.SlotNum);
+                Console.WriteLine("\t\tLevel={0}",m.Level);
+                Console.WriteLine("\t\tState={0}",m.State);
+                Console.WriteLine("\t\tLatestPing={0}",m.LatestPing);
+                Console.WriteLine("\t\tLatestFrameRate={0}",m.LatestFrameRate);
+                Console.WriteLine("\t\tIsReturn={0}",m.IsReturn);
+                Console.WriteLine("\t\tIsEventJumping={0}",m.IsEventJumping);
+            }
+        }
+
+        private static T GetPrivateProperty<T>(Object msg, string propName) {
+            return (T)(msg.GetType().GetProperty(propName, BindingFlags.Instance | BindingFlags.NonPublic).GetValue(msg));
+        }
+
+
+
+        private static void PrintUpdateShipMessage(UpdateShipMessage msg, object tag) {
+            //need to use reflection to access the ShipInfo object
+            ShipInfo s = GetPrivateProperty<ShipInfo>(msg, "info");
+            Console.WriteLine("UpdateShipMessage:");
+            Console.WriteLine("\tPartyID={0}", s.PartyID);
+            Console.WriteLine("\tShipName={0}", s.ShipName);
+            Console.WriteLine("\tPassword={0}", s.Password);
+            Console.WriteLine("\tMinLevelConstraint={0}", s.MinLevelConstraint);
+            Console.WriteLine("\tMaxLevelConstraint={0}", s.MaxLevelConstraint);
+            Console.WriteLine("\tMemberCount={0}", s.MemberCount);
+            Console.WriteLine("\tMaxShipMemberCount={0}", s.MaxShipMemberCount);
+            Console.WriteLine("\tstringQuestID={0}", s.QuestID);
+            Console.WriteLine("\tIsHuntingQuest={0}", s.IsHuntingQuest);
+            Console.WriteLine("\tIsGiantRaid={0}", s.IsGiantRaid);
+            Console.WriteLine("\tSwearID={0}", s.SwearID);
+            Console.WriteLine("\tRestTime={0}", s.RestTime);
+            Console.WriteLine("\tReinforceAllowed={0}", s.ReinforceAllowed);
+            Console.WriteLine("\tAdultRule={0}", s.AdultRule);
+            Console.WriteLine("\tState={0}", s.State);
+            Console.WriteLine("\tPartyBonusCount={0}", s.PartyBonusCount);
+            Console.WriteLine("\tPartyBonusRatio={0}", s.PartyBonusRatio);
+            Console.WriteLine("\tIsPartyOnly={0}", s.IsPartyOnly);
+            Console.WriteLine("\tHostPing={0}", s.HostPing);
+            Console.WriteLine("\tHostFrameRate={0}", s.HostFrameRate);
+            Console.WriteLine("\tDifficulty={0}", s.Difficulty);
+            Console.WriteLine("\tIsReturn={0}", s.IsReturn);
+            Console.WriteLine("\tIsSeason={0}", s.IsSeason2);
+            Console.WriteLine("\tIsPracticeMode={0}", s.IsPracticeMode);
+            Console.WriteLine("\tUserDSMode={0}", s.UserDSMode);
+            Console.WriteLine("\tselectedBossQuestIDInfos={0}", String.Join(",", s.selectedBossQuestIDInfos));
+            int i = 0;
+            foreach (PartyMemberInfo m in s.Members) {
+                Console.WriteLine(PartyMemberInfoToString(m,i++));
+            }
+            //could get an infinite loop if I tried to parse this fully
+            Console.WriteLine("\tShipList=[{0}]",String.Join(",",s.ShipListNode.List));
+            
+        }
+
+        private static void PrintPayCoinCompletedMessage(PayCoinCompletedMessage msg, object tag) {
+            Console.WriteLine("PayCoinCompletedMessage:");
+            foreach (PaidCoinInfo p in msg.Coininfos) {
+                Console.WriteLine("\tSlot={0} SilverCoin=[{1}] PlatinumCoinOwner={2} PlatinumCoinType={3}",p.Slot,String.Join(",",p.SilverCoin),p.PlatinumCoinOwner,p.PlatinumCoinType);
+            }
+        }
+
+        public static ConnectionRequestMessage lastConnectionRequestMsg = null;
+
+        private static void ConnectionRequestMessage(ConnectionRequestMessage msg, object tag) {
+            //TODO: use this info to decrypt relay messages
+            Console.WriteLine("ConnectionRequestMessage:");
+            Console.WriteLine("\tAddress={0}",msg.Address);
+            Console.WriteLine("\tPort={0}",msg.Port);
+            Console.WriteLine("\tPosixTime={0}",msg.PosixTime);
+            Console.WriteLine("\tKey={0}",msg.Key);
+            Console.WriteLine("\tCategory={0}",msg.Category);
+            Console.WriteLine("\tPingHostCID={0}",msg.PingHostCID);
+            Console.WriteLine("\tGroupID={0}",msg.GroupID);
+            lastConnectionRequestMsg = msg;
+        }
+
+        private static void PrintLaunchShipGrantedMessage(LaunchShipGrantedMessage msg, object tag) {
+            Console.WriteLine("\tLaunchShipGrantedMessage:");
+            Console.WriteLine("\tQuestID={0}",msg.QuestID);
+            Console.WriteLine("\tAdultRule={0}",msg.AdultRule);
+            Console.WriteLine("\tIsPracticeMode={0}",msg.IsPracticeMode);
+            Console.WriteLine("\tHostInfo:");
+            Console.WriteLine(GameJoinMemberInfoToString(msg.HostInfo,2));
         }
     }
 }
