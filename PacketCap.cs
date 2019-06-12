@@ -246,7 +246,7 @@ namespace PacketCap
                     }
 
                 }
-                catch (System.Runtime.Serialization.SerializationException e)
+                catch (System.Runtime.Serialization.SerializationException)
                 {
                     //Console.WriteLine("{0}: Bad length {1}", connString, e.Message);
                     RemovePacket();

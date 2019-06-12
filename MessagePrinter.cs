@@ -17,6 +17,7 @@ using System.Linq.Expressions;
 using System.Net;
 using Nexon.CafeAuth;
 using System.Drawing;
+using ServiceCore.MicroPlayServiceOperations;
 
 namespace PacketCap
 {
@@ -796,7 +797,11 @@ namespace PacketCap
 
         private static void PrintQueryNpcTalkMessage(QueryNpcTalkMessage msg, object tag)
         {
-            Console.WriteLine(msg.ToString());
+            Console.WriteLine("QueryNpcTalkMessage:");
+            Console.WriteLine("\tLocation={0}",msg.Location);
+            Console.WriteLine("\tNpcID={0}",msg.NpcID);
+            Console.WriteLine("\tStoryLine={0}",msg.StoryLine);
+            Console.WriteLine("\tCommand={0}",msg.Command);
         }
 
         private static void PrintQueryBattleInventoryInTownMessage(QueryBattleInventoryInTownMessage msg, object tag)
@@ -884,7 +889,9 @@ namespace PacketCap
         }
         private static void PrintCheckCharacterNameMessage(CheckCharacterNameMessage msg, object tag)
         {
-            Console.WriteLine(msg.ToString());
+            Console.WriteLine("CheckCharacterNameMessage:");
+            Console.WriteLine("\tName={0}",msg.Name);
+            Console.WriteLine("\tIsNameChange={0}", msg.IsNameChange);
         }
 
         private static void PrintQueryReservedInfoMessage(QueryReservedInfoMessage msg, object tag)
@@ -913,7 +920,7 @@ namespace PacketCap
             Console.WriteLine(DictToString<String, String>(msg.FeatureDic, "FeatureDic", 1));
         }
         private static void PrintGiveAPMessage(GiveAPMessage msg, object tag) {
-            Console.WriteLine(msg);
+            Console.WriteLine("GiveAPMessage: AP={0}",msg.AP);
         }
 
         private static void PrintUserIDMessage(UserIDMessage msg, object tag) {
@@ -921,11 +928,12 @@ namespace PacketCap
         }
 
         private static void PrintAnswerFinishQuestMessage(AnswerFinishQuestMessage msg, object tag) {
-            Console.WriteLine(msg.ToString());
+            Console.WriteLine("AnswerFinishQuestMessage: FollowHost={0}",msg.FollowHost);
         }
 
         private static void PrintExchangeMileageResultMessage(ExchangeMileageResultMessage msg, object tag) {
-            Console.WriteLine(msg.ToString());
+            bool IsSuccess = GetPrivateProperty<bool>(msg, "IsSuccess");
+            Console.WriteLine("ExchangeMileageResultMessage: IsSuccess={0}",IsSuccess);
         }
         private static void PrintSecuredOperationMessage(SecuredOperationMessage msg, object tag) {
             StringBuilder sb = new StringBuilder();
@@ -936,17 +944,21 @@ namespace PacketCap
             Console.WriteLine(sb.ToString());
         }
         private static void PrintUseInventoryItemWithCountMessage(UseInventoryItemWithCountMessage msg, object tag) {
-            Console.WriteLine(msg.ToString());
+            Console.WriteLine("UseInventoryItemWithCountMessage:");
+            Console.WriteLine("\tItemID={0}",msg.ItemID);
+            Console.WriteLine("\tTargetItemID={0}", msg.TargetItemID);
+            Console.WriteLine("\tTargetItemCount={0}", msg.TargetItemCount);
+
         }
         private static void PrintAllUserJoinCompleteMessage(AllUserJoinCompleteMessage msg, object tag) {
-            Console.WriteLine(msg.ToString());
+            Console.WriteLine("AllUserJoinCompleteMessage: []");
         }
 
         private static void PrintRequestMarbleProcessNodeMessage(RequestMarbleProcessNodeMessage msg, object tag) {
             Console.WriteLine("RequestMarbleProcessNodeMessage: CurrentIndex={0}", msg.CurrentIndex);
         }
         private static void PrintQuerySharedInventoryMessage(QuerySharedInventoryMessage msg, object tag) {
-            Console.WriteLine(msg.ToString());
+            Console.WriteLine("QuerySharedInventoryMessage: []");
         }
 
         private static void PrintUpdateHistoryBookMessage(UpdateHistoryBookMessage msg, object tag) {
@@ -964,7 +976,8 @@ namespace PacketCap
             
         }
         private static void PrintGiveCashShopDiscountCouponResultMessage(GiveCashShopDiscountCouponResultMessage msg, object tag) {
-            Console.WriteLine("GiveCashShopDiscountCouponResultMessage: result={0}", msg.ToString());
+            bool IsSuccess = GetPrivateProperty<bool>(msg, "IsSuccess");
+            Console.WriteLine("GiveCashShopDiscountCouponResultMessage: result={0}", IsSuccess);
         }
 
         private static void PrintUpdateHousingPropsMessage(UpdateHousingPropsMessage msg, object tag) {
@@ -1060,11 +1073,11 @@ namespace PacketCap
         }
 
         private static void PrintHousingInvitedMessage(HousingInvitedMessage msg, object tag) {
-            Console.WriteLine(msg.ToString());
+            Console.WriteLine("HousingInvitedMessage: HostName={0} HousingID={1}",msg.HostName,msg.HousingID);
         }
 
         private static void PrintHousingHostRestartingMessage(HousingHostRestartingMessage msg, object tag) {
-            Console.WriteLine(msg.ToString());
+            Console.WriteLine("HousingHostRestartingMessage: []");
         }
 
         private static void PrintEnterHousingMessage(EnterHousingMessage msg, object tag) {
@@ -1104,7 +1117,7 @@ namespace PacketCap
         }
 
         private static void PrintAllUserGoalEventModifyMessage(AllUserGoalEventModifyMessage msg, object tag) {
-            Console.WriteLine(msg.ToString());
+            Console.WriteLine("AllUserGoalEventModifyMessage: GoalID={0} Count={1}",msg.GoalID,msg.Count);
         }
 
         private static void PrintAvatarSynthesisItemMessage(AvatarSynthesisItemMessage msg, object tag) {
@@ -1124,7 +1137,9 @@ namespace PacketCap
         }
 
         private static void PrintGuildChatMessage(GuildChatMessage msg, object tag) {
-            Console.WriteLine(msg.ToString());
+            Console.WriteLine("GuildChatMessage:");
+            Console.WriteLine("\tSender={0}",msg.Sender);
+            Console.WriteLine("\tMessage={0}",msg.Message);
         }
 
         private static void PrintChangeMasterMessage(ChangeMasterMessage msg, object tag) {
@@ -1240,11 +1255,12 @@ namespace PacketCap
         }
 
         private static void PrintCaptchaResponseResultMessage(CaptchaResponseResultMessage msg, object tag) {
-            Console.WriteLine("CaptchaResponseResultMessage: Result=?");
+            int Result = GetPrivateProperty<int>(msg, "Result");
+            Console.WriteLine("CaptchaResponseResultMessage: Result={0}",Result);
         }
 
         private static void PrintJoinGuildChatRoomMessage(JoinGuildChatRoomMessage msg, object tag) {
-            Console.WriteLine(msg.ToString());
+            Console.WriteLine("JoinGuildChatRoomMessage: GuildKey={0}",msg.GuildKey);
         }
 
         private static void PrintHousingListMessage(HousingListMessage msg, object tag) {
@@ -1359,11 +1375,11 @@ namespace PacketCap
         }
 
         private static void PrintRequestAddPeerMessage(RequestAddPeerMessage msg, object tag) {
-            Console.WriteLine(msg.ToString());
+            Console.WriteLine("RequestAddPeerMessage: PingEntityIDs=[{0}]",String.Join(",",msg.PingEntityIDs));
         }
 
         private static void PrintMaxDurabilityRepairItemMessage(MaxDurabilityRepairItemMessage msg, object tag) {
-            Console.WriteLine(msg.ToString());
+            Console.WriteLine("MaxArmorRepairItemMessage: TargetItemID={0} SourceItemID={1}", msg.TargetItemID, msg.SourceItemID);
         }
 
         private static void PrintSecondPasswordResultMessage(SecondPasswordResultMessage msg, object tag) {
@@ -1579,7 +1595,9 @@ namespace PacketCap
         }
 
         private static void PrintUpdateInventoryInfoMessage(UpdateInventoryInfoMessage msg, object tag) {
-            Console.WriteLine("UpdateInventoryInfoMessage: [?]");
+            ICollection<SlotInfo> slotInfos = GetPrivateProperty<ICollection<SlotInfo>>(msg, "slotInfos");
+            Console.WriteLine(ListToString<SlotInfo>(slotInfos, "UpdateInventoryInfoMessage", 0));
+            //TODO: fully parse slotinfos with a function
         }
 
         private static void PrintFriendshipInfoListMessage(FriendshipInfoListMessage msg, object tag) {
@@ -1612,11 +1630,11 @@ namespace PacketCap
         }
 
         private static void PrintAskSecondPasswordMessage(AskSecondPasswordMessage msg, object tag) {
-            Console.WriteLine(msg.ToString());
+            Console.WriteLine("AskSecondPasswordMessage: []");
         }
 
         private static void PrintNoticeGameEnvironmentMessage(NoticeGameEnvironmentMessage msg, object tag) {
-            Console.WriteLine(msg.ToString());
+            Console.WriteLine("NoticeGameEnvironmentMessage: CafeType={0} IsOTP={1}",msg.CafeType,msg.IsOTP);
         }
 
         private static void PrintSpSkillMessage(SpSkillMessage msg, object tag) {
@@ -1642,7 +1660,8 @@ namespace PacketCap
         }
 
         private static void PrintSelectPatternMessage(SelectPatternMessage msg, object tag) {
-            Console.WriteLine(msg.ToString());
+            int pattern = GetPrivateProperty<int>(msg, "pattern");
+            Console.WriteLine("SelectPatternMessage: pattern={0}", pattern);
         }
 
         private static void PrintQueryHousingItemsMessage(QueryHousingItemsMessage msg, object tag) {
@@ -1715,8 +1734,32 @@ namespace PacketCap
             Console.WriteLine(ListToString<RankAlarmInfo>(msg.RankAlarm,"RankAlarmInfoMessage", 0));
         }
 
+        private static string ConsumablesInfoToString(ConsumablesInfo c) {
+            StringBuilder sb = new StringBuilder();
+            sb.AppendFormat("ItemClass={0} BringNum={1} UsedNum={2} DraftNum={3} innerConsumables=[",c.ItemClass,c.BringNum,c.Usednum,c.DraftNum);
+            foreach (ConsumablesInfo info in c.InnerConsumables) {
+                sb.Append(info.ItemClass);
+                sb.Append(",");
+            }
+            if (c.InnerConsumables.Count != 0) {
+                sb.Remove(sb.Length - 1, 1);
+            }
+            sb.Append("]");
+            return sb.ToString();
+        }
+
         private static void PrintUpdateBattleInventoryInTownMessage(UpdateBattleInventoryInTownMessage msg, object tag) {
-            Console.WriteLine(msg.ToString());
+            Console.WriteLine("UpdateBattleInventoryInTownMessage:");
+            BattleInventory b = msg.BattleInventory;
+            Console.WriteLine("\tUsedList:");
+            foreach (KeyValuePair<string, ConsumablesInfo> entry in b.UsedList) {
+                Console.WriteLine("\t\t{0}={1}",entry.Key, ConsumablesInfoToString(entry.Value));
+            }
+            Console.WriteLine("\tConsumables:");
+            foreach (KeyValuePair<int, ConsumablesInfo> entry in b.Consumables)
+            {
+                Console.WriteLine("\t\t{0}={1}", entry.Key, ConsumablesInfoToString(entry.Value));
+            }
         }
 
         private static void PrintBingoBoardResultMessage(BingoBoardResultMessage msg, object tag) {
@@ -1777,11 +1820,11 @@ namespace PacketCap
         }
 
         private static void PrintGiveCashShopDiscountCouponMessage(GiveCashShopDiscountCouponMessage msg, object tag) {
-            Console.WriteLine(msg.ToString());
+            Console.WriteLine("GiveCashShopDiscountCouponMessage: CouponCode={0}",msg.CouponCode);
         }
 
         private static void PrintNextSectorMessage(NextSectorMessage msg, object tag) {
-            Console.WriteLine(msg.ToString());
+            Console.WriteLine("NextSectorMessage: OnSectorStart={0}", msg.OnSectorStart);
         }
 
         private static void PrintBurnGauge(BurnGauge msg, object tag) {
@@ -2051,22 +2094,31 @@ namespace PacketCap
 
         private static void PrintUseInventoryItemMessage(UseInventoryItemMessage msg, object tag)
         {
-            Console.WriteLine(msg.ToString());
+            Console.WriteLine("UseInventoryItemMessage: ItemID={0} TargetItemID={1}", msg.ItemID, msg.TargetItemID);
         }
 
         private static void PrintGetMailItemMessage(GetMailItemMessage msg, object tag)
         {
-            Console.WriteLine(msg.ToString());
+            Console.WriteLine("GetMailItemMessage: MailID={0}", msg.MailID);
         }
 
         private static void PrintQueryMailInfoMessage(QueryMailInfoMessage msg, object tag)
         {
-            Console.WriteLine(msg.ToString());
+            Console.WriteLine("QueryMailInfoMessage: MailID={0}",msg.MailID);
         }
 
         private static void PrintMonsterKilledMessage(MonsterKilledMessage msg, object tag)
         {
-            Console.WriteLine(msg.ToString());
+            Console.WriteLine("MonsterKilledMessage:");
+            Console.WriteLine("\tAttacker={0}", msg.Attacker);
+            Console.WriteLine("\tTarget={0}", msg.Target);
+            Console.WriteLine("\tActionType={0}", msg.ActionType);
+            Console.WriteLine("\tHasEvilCore={0}", msg.HasEvilCore);
+            Console.WriteLine("\tDamage={0}", msg.Damage);
+            Console.WriteLine("\tDamagePositionX={0}", msg.DamagePositionX);
+            Console.WriteLine("\tDamagePositionY={0}", msg.DamagePositionY);
+            Console.WriteLine("\tDistance={0}", msg.Distance);
+            Console.WriteLine("\tActorIndex={0}", msg.ActorIndex);
         }
 
         private static void PrintExecuteNpcServerCommandMessage(ExecuteNpcServerCommandMessage msg, object tag)
@@ -2076,17 +2128,33 @@ namespace PacketCap
 
         private static void PrintRagdollKickedMessage(RagdollKickedMessage msg, object tag)
         {
-            Console.WriteLine(msg.ToString());
+            Console.WriteLine("RagdollKickedMessage:");
+            Console.WriteLine("\tTag={0}", msg.Tag);
+            Console.WriteLine("\tTargetEntityName={0}", msg.TargetEntityName);
+            Console.WriteLine("\tEvilCoreType={0}", msg.EvilCoreType);
+            Console.WriteLine("\tIsRareCore={0}", msg.IsRareCore);
         }
 
         private static void PrintCombatRecordMessage(CombatRecordMessage msg, object tag)
         {
-            Console.WriteLine(msg.ToString());
+            Console.WriteLine("CombatRecordMessage:");
+            Console.WriteLine("\tPlayerNumber={0}", msg.PlayerNumber);
+            Console.WriteLine("\tComboMax={0}", msg.ComboMax);
+            Console.WriteLine("\tHitMax={0}", msg.HitMax);
+            Console.WriteLine("\tStyleMax={0}", msg.StyleMax);
+            Console.WriteLine("\tDeath={0}", msg.Death);
+            Console.WriteLine("\tKill={0}", msg.Kill);
+            Console.WriteLine("\tBattleAchieve={0}", msg.BattleAchieve);
+            Console.WriteLine("\tHitTake={0}", msg.HitTake);
+            Console.WriteLine("\tStyleCount={0}", msg.StyleCount);
+            Console.WriteLine("\tRankStyle={0}", msg.RankStyle);
+            Console.WriteLine("\tRankBattle={0}", msg.RankBattle);
+            Console.WriteLine("\tRankTotal={0}", msg.RankTotal);
         }
 
         private static void PrintMicroPlayEventMessage(MicroPlayEventMessage msg, object tag)
         {
-            Console.WriteLine(msg.ToString());
+            Console.WriteLine("MicroPlayEventMessage: Slot={0} EventString={1}",msg.Slot,msg.EventString);
         }
 
         private static void PrintMonsterDamageReportMessage(MonsterDamageReportMessage msg, object tag)
@@ -2133,7 +2201,14 @@ namespace PacketCap
         }
 
         private static T GetPrivateProperty<T>(Object msg, string propName) {
-            return (T)(msg.GetType().GetProperty(propName, BindingFlags.Instance | BindingFlags.NonPublic).GetValue(msg));
+            Type t = msg.GetType();
+            FieldInfo[] fields = t.GetFields(BindingFlags.NonPublic | BindingFlags.Instance);
+            foreach (FieldInfo f in fields) {
+                if (f.Name == propName) {
+                    return (T)f.GetValue(msg);
+                }
+            }
+            return default(T);
         }
 
 
