@@ -202,7 +202,7 @@ namespace PacketCap
                 return;
             }
             if (encrypt == EncryptionType.Relay || encrypt == EncryptionType.Pipe) {
-                //Console.WriteLine("Cannot handle type {0}",encrypt);
+                Console.WriteLine("Cannot handle type {0} from {1}",encrypt,serviceType);
                 return;
             }
             if (dataBytes == 6 || dataBytes == 0) {
@@ -298,7 +298,9 @@ namespace PacketCap
                     if (classNames.TryGetValue(p.CategoryId, out className) && !unhandledTypes.Contains(className)) {
                         String methodStr = GenMethodString(className);
                         FileLog.Log("unhandled.log", methodStr);
-                        unhandledTypes.Add(className);
+                        int lastDot = className.LastIndexOf('.');
+                        String trimmed = className.Substring(lastDot + 1);
+                        unhandledTypes.Add(trimmed);
                         Console.WriteLine("{0}: Handler missing for class {1}", connString, className);
                         return;
                     }
@@ -310,6 +312,8 @@ namespace PacketCap
                             String methodStr = GenMethodString(className);
                             FileLog.Log("unhandled.log", methodStr);
                             unhandledTypes.Add(className);
+                            Console.WriteLine("{0}: Handler missing for class {1}", connString, className);
+                            return;
                         }
                     }
                     Console.WriteLine("{0}: Unknown class error {1}", connString, errMsg);

@@ -520,25 +520,60 @@ namespace PacketCap
             }
         }
 
-        private static List<StatusEffectElement> lastStatusEffects = null;
+        private static Dictionary<string,List<StatusEffectElement>> lastStatusEffects = new Dictionary<string,List<StatusEffectElement>>();
+
+        private static string StatusEffectListToString(List<StatusEffectElement> list, string name, string charName, int numTabs) {
+            List<StatusEffectElement> last = null;
+            lastStatusEffects.TryGetValue(charName, out last);
+            
+            StringBuilder sb = new StringBuilder();
+            String t = "";
+            if (numTabs > 0) {
+                t = new string('\t',numTabs);
+                sb.Append(t);
+            }
+            sb.Append(name);
+            sb.Append(":");
+            if (list == null || list.Count == 0)
+            {
+                lastStatusEffects[charName] = list;
+                return sb.ToString();
+            }
+            t = "\n"+new string('\t', numTabs);
+            sb.Append(t);
+            
+            foreach (StatusEffectElement e in list)
+            {
+                bool foundStatusEffect = false;
+                foreach (StatusEffectElement l in last)
+                {
+                    if (e.Type == l.Type && e.Level == l.Level && e.RemainTime == l.RemainTime && e.CombatCount == l.CombatCount) {
+                        foundStatusEffect = true;
+                        break;
+                    }
+                }
+                if (foundStatusEffect) {
+                    continue;
+                }
+                sb.Append(t);
+                sb.Append("Type=");
+                sb.Append(e.Type);
+                sb.Append(" Level=");
+                sb.Append(e.Level);
+                sb.Append(" RemainTime=");
+                sb.Append(e.RemainTime);
+                sb.Append(" CombatCount=");
+                sb.Append(e.CombatCount);
+            }
+            lastStatusEffects[charName] = list;
+            return sb.ToString();
+        }
+
         private static void PrintStatusEffectUpdated(StatusEffectUpdated msg, object tag)
         {
-            if (lastStatusEffects != null && lastStatusEffects.Count == 0 && msg.StatusEffects.Count == 0) {
-                lastStatusEffects = msg.StatusEffects;
-                return;
-            }
-
             Console.WriteLine("StatusEffectUpdated:");
             Console.WriteLine("\tCharacterName={0}", msg.CharacterName);
-            if (msg.StatusEffects != null && msg.StatusEffects.Count != 0)
-            {
-                Console.WriteLine("\tStatusEffects:");
-                foreach (StatusEffectElement e in msg.StatusEffects)
-                {
-                    Console.WriteLine("\t\tType={0} Level={1} RemainTime={2} CombatCount={3}", e.Type, e.Level, e.RemainTime, e.CombatCount);
-                }
-            }
-            lastStatusEffects = msg.StatusEffects;
+            Console.WriteLine(StatusEffectListToString(msg.StatusEffects, "StatusEffects", msg.CharacterName, 1));
         }
 
         private static void PrintQuestProgressMessage(QuestProgressMessage msg, object tag)
@@ -549,7 +584,6 @@ namespace PacketCap
             {
                 Console.WriteLine(ListToString<AchieveGoalInfo>(msg.AchievedGoals, "AchievedGoals", 1));
             }
-
         }
 
         private static string IntToEquipmentSlot(int key) {
@@ -2284,40 +2318,108 @@ namespace PacketCap
             return default(T);
         }
 
+        private static string ShipInfoToString(ShipInfo s, string name, int numTabs) {
+            String t = "";
+            StringBuilder sb = new StringBuilder();
+            if (numTabs > 0) {
+                t = new string('\t',numTabs);
+                sb.Append(t);
+            }
+            sb.Append(name);
+            sb.Append(":");
+            t = "\n"+new string('\t', numTabs+1);
+            sb.Append(t);
+            sb.Append("PartyID=");
+            sb.Append(s.PartyID);
+            sb.Append(t);
+            sb.Append("ShipName=");
+            sb.Append(s.ShipName);
+            sb.Append(t);
+            sb.Append("Password=");
+            sb.Append(s.Password);
+            sb.Append(t);
+            sb.Append("MinLevelConstraint=");
+            sb.Append(s.MinLevelConstraint);
+            sb.Append(t);
+            sb.Append("MaxLevelConstraint=");
+            sb.Append(s.MaxLevelConstraint);
+            sb.Append(t);
+            sb.Append("MemberCount=");
+            sb.Append(s.MemberCount);
+            sb.Append(t);
+            sb.Append("MaxShipMemberCount=");
+            sb.Append(s.MaxShipMemberCount);
+            sb.Append(t);
+            sb.Append("QuestID=");
+            sb.Append(s.QuestID);
+            sb.Append(t);
+            sb.Append("IsHuntingQuest=");
+            sb.Append(s.IsHuntingQuest);
+            sb.Append(t);
+            sb.Append("IsGiantRaid=");
+            sb.Append(s.IsGiantRaid);
+            sb.Append(t);
+            sb.Append("SwearID=");
+            sb.Append(s.SwearID);
+            sb.Append(t);
+            sb.Append("RestTime=");
+            sb.Append(s.RestTime);
+            sb.Append(t);
+            sb.Append("ReinforceAllowed=");
+            sb.Append(s.ReinforceAllowed);
+            sb.Append(t);
+            sb.Append("AdultRule=");
+            sb.Append(s.AdultRule);
+            sb.Append(t);
+            sb.Append("State=");
+            sb.Append(s.State);
+            sb.Append(t);
+            sb.Append("PartyBonusCount=");
+            sb.Append(s.PartyBonusCount);
+            sb.Append(t);
+            sb.Append("PartyBonusRatio=");
+            sb.Append(s.PartyBonusRatio);
+            sb.Append(t);
+            sb.Append("IsPartyOnly=");
+            sb.Append(s.IsPartyOnly);
+            sb.Append(t);
+            sb.Append("HostPing=");
+            sb.Append(s.HostPing);
+            sb.Append(t);
+            sb.Append("HostFrameRate=");
+            sb.Append(s.HostFrameRate);
+            sb.Append(t);
+            sb.Append("Difficulty=");
+            sb.Append(s.Difficulty);
+            sb.Append(t);
+            sb.Append("IsReturn=");
+            sb.Append(s.IsReturn);
+            sb.Append(t);
+            sb.Append("IsSeason2=");
+            sb.Append(s.IsSeason2);
+            sb.Append(t);
+            sb.Append("IsPracticeMode=");
+            sb.Append(s.IsPracticeMode);
+            sb.Append(t);
+            sb.Append("UserDSMode=");
+            sb.Append(s.UserDSMode);
+            sb.Append(t);
+            sb.Append("SelectedBossQuestIDInfos=");
+            sb.Append(String.Join(",", s.selectedBossQuestIDInfos));
+
+            int i = 0;
+            foreach (PartyMemberInfo m in s.Members)
+            {
+                sb.Append("\n");
+                sb.Append(PartyMemberInfoToString(m, String.Format("Member[{0}]", i++), 1));
+            }
+            return sb.ToString();
+        }
+
         private static void PrintUpdateShipMessage(UpdateShipMessage msg, object tag) {
             //need to use reflection to access the ShipInfo object
             ShipInfo s = GetPrivateProperty<ShipInfo>(msg, "info");
-            Console.WriteLine("UpdateShipMessage:");
-            Console.WriteLine("\tPartyID={0}", s.PartyID);
-            Console.WriteLine("\tShipName={0}", s.ShipName);
-            Console.WriteLine("\tPassword={0}", s.Password);
-            Console.WriteLine("\tMinLevelConstraint={0}", s.MinLevelConstraint);
-            Console.WriteLine("\tMaxLevelConstraint={0}", s.MaxLevelConstraint);
-            Console.WriteLine("\tMemberCount={0}", s.MemberCount);
-            Console.WriteLine("\tMaxShipMemberCount={0}", s.MaxShipMemberCount);
-            Console.WriteLine("\tQuestID={0}", s.QuestID);
-            Console.WriteLine("\tIsHuntingQuest={0}", s.IsHuntingQuest);
-            Console.WriteLine("\tIsGiantRaid={0}", s.IsGiantRaid);
-            Console.WriteLine("\tSwearID={0}", s.SwearID);
-            Console.WriteLine("\tRestTime={0}", s.RestTime);
-            Console.WriteLine("\tReinforceAllowed={0}", s.ReinforceAllowed);
-            Console.WriteLine("\tAdultRule={0}", s.AdultRule);
-            Console.WriteLine("\tState={0}", s.State);
-            Console.WriteLine("\tPartyBonusCount={0}", s.PartyBonusCount);
-            Console.WriteLine("\tPartyBonusRatio={0}", s.PartyBonusRatio);
-            Console.WriteLine("\tIsPartyOnly={0}", s.IsPartyOnly);
-            Console.WriteLine("\tHostPing={0}", s.HostPing);
-            Console.WriteLine("\tHostFrameRate={0}", s.HostFrameRate);
-            Console.WriteLine("\tDifficulty={0}", s.Difficulty);
-            Console.WriteLine("\tIsReturn={0}", s.IsReturn);
-            Console.WriteLine("\tIsSeason={0}", s.IsSeason2);
-            Console.WriteLine("\tIsPracticeMode={0}", s.IsPracticeMode);
-            Console.WriteLine("\tUserDSMode={0}", s.UserDSMode);
-            Console.WriteLine("\tSelectedBossQuestIDInfos={0}", String.Join(",", s.selectedBossQuestIDInfos));
-            int i = 0;
-            foreach (PartyMemberInfo m in s.Members) {
-                Console.WriteLine(PartyMemberInfoToString(m,String.Format("Member[{0}]",i++),1));
-            }
+            Console.WriteLine(ShipInfoToString(s,"UpdateShipMessage",0));
         }
 
         private static void PrintPayCoinCompletedMessage(PayCoinCompletedMessage msg, object tag) {
@@ -2349,6 +2451,209 @@ namespace PacketCap
             Console.WriteLine("\tIsPracticeMode={0}",msg.IsPracticeMode);
             Console.WriteLine("\tHostInfo:");
             Console.WriteLine(GameJoinMemberInfoToString(msg.HostInfo,2));
+        }
+
+        private static void PrintTodayMissionUpdateMessage(TodayMissionUpdateMessage msg, object tag)
+        {
+            Console.WriteLine("TodayMissionUpdateMessage:");
+            Console.WriteLine("\tID={0}",msg.ID);
+            Console.WriteLine("\tCurrentCount={0}",msg.CurrentCount);
+            Console.WriteLine("\tIsFinished={0}",msg.IsFinished);
+        }
+        private static void PrintReturnFromQuestMessage(ReturnFromQuestMessage msg, object tag)
+        {
+            Console.WriteLine("ReturnFromQuestMessage:");
+            Console.WriteLine("\tOrder={0}", msg.Order);
+            Console.WriteLine("\tStorySectorBSP={0}",msg.StorySectorBSP);
+            Console.WriteLine("\tStorySectorEntity={0}",msg.StorySectorEntity);
+        }
+
+        private static void PrintKickedMessage(KickedMessage msg, object tag)
+        {
+            Console.WriteLine("KickedMessage: []");
+        }
+
+        private static string SummaryRewardInfoListToString(List<SummaryRewardInfo> list, String name, int numTabs) {
+            if (list.Count == 0) {
+                return "";
+            }
+            String t = "";
+            StringBuilder sb = new StringBuilder();
+            if (numTabs > 0) {
+                t = new string('\t', numTabs);
+                sb.Append(t);
+            }
+            sb.Append(name);
+            sb.Append(":");
+            if (list == null || list.Count == 0) {
+                return sb.ToString();
+            }
+            t = "\n"+new string('\t', numTabs+1);
+
+            foreach (SummaryRewardInfo s in list) {
+                sb.Append(t);
+                sb.Append("Desc=");
+                sb.Append(s.Desc);
+                sb.Append(" Arg1=");
+                sb.Append(s.Arg1);
+                sb.Append(" Arg2=");
+                sb.Append(s.Arg2);
+                sb.Append(" Value=");
+                sb.Append(s.Value);
+            }
+            return sb.ToString();
+        }
+
+        private static void PrintFinishGameMessage(FinishGameMessage msg, object tag)
+        {
+            Console.WriteLine("FinishGameMessage:");
+            Console.WriteLine("\tHasStorySector={0}", msg.HasStorySector);
+            Console.WriteLine("\tCanRestart={0}", msg.CanRestart);
+            Console.WriteLine("\tCanContinueFinishedQuest={0}", msg.CanContinueFinishedQuest);
+            Console.WriteLine("\tSummary:");
+            QuestSummaryInfo q = msg.Summary;
+            Console.WriteLine("\t\tQuestID={0}",q.QuestID);
+            Console.WriteLine("\t\tSwearID={0}",q.SwearID);
+            Console.WriteLine("\t\tIsTodayQuest={0}",q.IsTodayQuest);
+            Console.WriteLine("\t\tResult={0}",q.Result);
+            Console.WriteLine("\t\tLastProgress={0}",q.LastProgress);
+            Console.WriteLine("\t\tCurrentProgress={0}",q.CurrentProgress);
+            if (q.ClearedGoals.Count != 0) {
+                Console.WriteLine("\t\tClearedGoals:");
+                foreach (KeyValuePair<int, SummaryGoalInfo> entry in q.ClearedGoals) {
+                    Console.WriteLine("\t\t\t{0}=(GoalID={1} Exp={2} Gold={3} Ap={4})",entry.Key,entry.Value.GoalID,entry.Value.Exp,entry.Value.Gold,entry.Value.Ap);
+                }
+            }
+            Console.WriteLine(SummaryRewardInfoListToString(q.BattleExp,"BattleExp",2));
+            Console.WriteLine(SummaryRewardInfoListToString(q.EtcExp,"EtcExp",2));
+            Console.WriteLine(SummaryRewardInfoListToString(q.MainGold,"MainGold",2));
+            Console.WriteLine(SummaryRewardInfoListToString(q.EtcGold,"EtcGold",2));
+            Console.WriteLine(SummaryRewardInfoListToString(q.QuestAp, "QuestAp", 2));
+            Console.WriteLine(SummaryRewardInfoListToString(q.EtcAp, "EtcAp", 2));
+            Console.WriteLine("\t\tExp={0}",q.Exp);
+            Console.WriteLine("\t\tGold={0}",q.Gold);
+            Console.WriteLine("\t\tAp={0}",q.Ap);
+            Console.WriteLine(DictToString<string,int>(q.RewardItem,"RewardItem",2));
+        }
+        private static void PrintMicroStatusEffectUpdated(MicroStatusEffectUpdated msg, object tag)
+        {
+            Console.WriteLine("MicroStatusEffectUpdated:");
+            Console.WriteLine("\tCharacterName={0}",msg.CharacterName);
+            Console.WriteLine("\tSlot={0}",msg.Slot);
+            Console.WriteLine(StatusEffectListToString(msg.StatusEffects,"StatusEffects",msg.CharacterName,1));
+        }
+
+        private static void PrintQuestSuccessSceneStartMessage(QuestSuccessSceneStartMessage msg, object tag)
+        {
+            Console.WriteLine("QuestSuccessSceneStartMessage: []");
+        }
+
+        private static void PrintQuestTargetResultMessage(QuestTargetResultMessage msg, object tag)
+        {
+            Console.WriteLine("QuestTargetResultMessage:");
+            Console.WriteLine("\tCharacterName={0}", msg.CharacterName);
+            Console.WriteLine("\tGoalID={0}", msg.GoalID);
+            Console.WriteLine("\tIsGoalSuccess={0}", msg.IsGoalSuccess);
+            Console.WriteLine("\tIsQuestSuccess={0}", msg.IsQuestSuccess);
+            Console.WriteLine("\tExp={0}", msg.Exp);
+            Console.WriteLine("\tGold={0}", msg.Gold);
+            Console.WriteLine("\tAp={0}", msg.Ap);
+        }
+
+        private static void PrintDropErgMessage(DropErgMessage msg, object tag)
+        {
+            Console.WriteLine("DropErgMessage:");
+            Console.WriteLine("\tBrokenProp={0}",msg.BrokenProp);
+            Console.WriteLine("\tMonsterEntityName={0}",msg.MonsterEntityName);
+            Console.WriteLine("\tDropErg:");
+            foreach (ErgInfo e in msg.DropErg) {
+                int winner = GetPrivateProperty<int>(e, "winner");
+                int ergID = GetPrivateProperty<int>(e, "ergID");
+                string ergClass = GetPrivateProperty<string>(e, "ergClass");
+                string ergType = GetPrivateProperty<string>(e, "ergType");
+                int amount = GetPrivateProperty<int>(e, "amount");
+                Console.WriteLine("\t\tWinner={0} ErgID={1} ErgClass={2} ErgType={3} Amount={4}",winner,ergID,ergClass,ergType,amount);
+            }
+        }
+        private static void PrintGetItemMessage(GetItemMessage msg, object tag)
+        {
+            Console.WriteLine("GetItemMessage:");
+            Console.WriteLine("\tPlayerName={0}", msg.PlayerName);
+            Console.WriteLine("\tItemClass={0}", msg.ItemClass);
+            Console.WriteLine("\tCount={0}", msg.Count);
+            Console.WriteLine("\tCoreType={0}", msg.CoreType);
+            Console.WriteLine("\tLucky={0}", msg.Lucky);
+            Console.WriteLine("\tLuckBonus={0}", msg.LuckBonus);
+            Console.WriteLine("\tGiveItemResult={0}", (GiveItem.ResultEnum)msg.GiveItemResult);
+        }
+
+        private static void PrintGameStartGrantedMessage(GameStartGrantedMessage msg, object tag)
+        {
+            //TODO: save this info to automate stuff
+            Console.WriteLine("GameStartGrantedMessage:");
+            Console.WriteLine("\tQuestLevel={0}", msg.QuestLevel);
+            Console.WriteLine("\tQuestTime={0}", msg.QuestTime);
+            Console.WriteLine("\tHardMode={0}", msg.HardMode);
+            Console.WriteLine("\tSoloSector={0}", msg.SoloSector);
+            Console.WriteLine("\tIsHuntingQuest={0}", msg.IsHuntingQuest);
+            Console.WriteLine("\tInitGameTime={0}", msg.InitGameTime);
+            Console.WriteLine("\tSectorMoveGameTime={0}", msg.SectorMoveGameTime);
+            Console.WriteLine("\tDifficulty={0}", msg.Difficulty);
+            Console.WriteLine("\tIsTimerDecreasing={0}", msg.IsTimerDecreasing);
+            Console.WriteLine("\tQuestStartedPlayerCount={0}", msg.QuestStartedPlayerCount);
+            Console.WriteLine("\tNewSlot={0}", msg.NewSlot);
+            Console.WriteLine("\tNewKey={0}", msg.NewKey);
+            Console.WriteLine("\tIsUserDedicated={0}", msg.IsUserDedicated);
+            Console.WriteLine("\tSectorInfos:");
+            QuestSectorInfos q = msg.QuestSectorInfos;
+            Console.WriteLine("\t\tCurrentGroup={0}",q.CurrentGroup);
+            Console.WriteLine("\t\tStartingGroup={0}",q.StartingGroup);
+            Console.WriteLine("\t\tTreasureBoxMaxCount={0}",q.TreasureBoxMaxCount);
+            Console.WriteLine("\t\tAltarStatus=[{0}]",String.Join(",",q.AltarStatus));
+            Console.WriteLine("\t\tBossKilledList=[{0}]",String.Join(",",q.BossKilledList));
+            int i = 0;
+            foreach (QuestSectorInfo s in q.SectorInfos) {
+                Console.WriteLine("\t\tQuestSectorInfo[{0}]:",i++);
+                Console.WriteLine("\t\t\tGroupID={0}",s.GroupID);
+                Console.WriteLine("\t\t\tBsp={0}",s.Bsp);
+                Console.WriteLine("\t\t\tEntities=[{0}]",String.Join(",",s.Entities));
+                Console.WriteLine("\t\t\tConnectionInfos:");
+                foreach (QuestSectorConnectionInfo c in s.ConnectionInfos) {
+                    Console.WriteLine("\t\t\t\tFrom={0} FromTrigger={1} To={2} ToSpawn={3}",c.From,c.FromTrigger,c.To,c.ToSpawn);
+                }
+                Console.WriteLine(DictToString<string,int>(s.ItemDropEntity,"ItemDropEntity",3));
+                Console.WriteLine(DictToString<string, int>(s.WeakPointEntity, "WeakPointEntity", 3));
+                Console.WriteLine("\t\t\tTrialFactorInfos:");
+                foreach(TrialFactorInfo t in s.TrialFactorInfos) {
+                    Console.WriteLine("\t\t\t\tGroupNumber={0} TrialMod={1} TrialName={2} SectorGroupID={3}",t.GroupNumber,t.TrialMod,t.TrialName,t.SectorGroupID);
+                }
+                Console.WriteLine("\t\t\tTreasureBoxInfos:");
+                foreach (TreasureBoxInfo t in s.TreasureBoxInfos) {
+                    Console.WriteLine("\t\t\t\tGroupID={0} EntityName={1} IsVisible={2} IsOpend={3}",t.GroupID,t.EntityName,t.IsVisible,t.IsOpend);
+                }
+                Console.WriteLine("\t\t\tSaveRequired={0}",s.SaveRequired);
+                Console.WriteLine("\t\t\tLastUsedSpawnPoint={0}",s.LastUsedSpawnPoint);
+            }
+        }
+        private static void PrintConnectionRequestMessage(ConnectionRequestMessage msg, object tag)
+        {
+            Console.WriteLine("ConnectionRequestMessage:");
+            Console.WriteLine("\tAddress={0}", msg.Address);
+            Console.WriteLine("\tPort={0}", msg.Port);
+            Console.WriteLine("\tPosixTime={0}", msg.PosixTime);
+            Console.WriteLine("\tKey={0}", msg.Key);
+            Console.WriteLine("\tCategory={0}", msg.Category);
+            Console.WriteLine("\tPingHostCID={0}", msg.PingHostCID);
+            Console.WriteLine("\tGroupID={0}", msg.GroupID);
+        }
+        private static void PrintShipListMessage(ShipListMessage msg, object tag)
+        {
+            Console.WriteLine("ShipListMessage:");
+            Console.WriteLine("\tIgnored={0}", msg.Ignored);
+            int i = 0;
+            foreach (ShipInfo s in msg.ShipList) {
+                Console.WriteLine(ShipInfoToString(s, String.Format("ShipInfo[{0}]", i++), 1));
+            }
         }
     }
 }
