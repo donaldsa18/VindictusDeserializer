@@ -18,6 +18,7 @@ using System.Net;
 using Nexon.CafeAuth;
 using System.Drawing;
 using ServiceCore.MicroPlayServiceOperations;
+using System.Text.RegularExpressions;
 
 namespace PacketCap
 {
@@ -262,13 +263,17 @@ namespace PacketCap
             if (l == null) {
                 costumeInfos[name] = c;
             }
-            String t1 = new string('\t', numTabs);
+            string t = "";
+            if (numTabs != 0) {
+                t = new string('\t', numTabs);
+            }
+            
             StringBuilder sb = new StringBuilder();
-            sb.Append(t1);
+            sb.Append(t);
             sb.Append(printName);
             sb.Append(":");
             int startLen = sb.Length;
-            String t = "\n" + new string('\t', numTabs + 1);
+            t = "\n" + new string('\t', numTabs + 1);
             if (l == null || c.Shineness != l.Shineness) {
                 sb.Append(t);
                 sb.Append("Shineness=");
@@ -383,8 +388,7 @@ namespace PacketCap
             }
 
             if (sb2.Length != 0) {
-                sb.Append("\n");
-                sb.Append(t1);
+                sb.Append(t);
                 sb.Append("DecorationInfo:");
                 sb.Append(sb2.ToString());
             }
@@ -403,14 +407,15 @@ namespace PacketCap
             }
             
             if (sb2.Length != 0) {
-                sb.Append("\n");
-                sb.Append(t1);
+                sb.Append(t);
                 sb.Append("DecorationColorInfo:");
                 sb.Append(sb2.ToString());
             }
-            sb.Append("\n");
-            sb.Append(BodyShapeInfoToString(c.BodyShapeInfo, numTabs+1,l?.BodyShapeInfo));
-
+            String bodyShape = BodyShapeInfoToString(c.BodyShapeInfo, numTabs + 1, l?.BodyShapeInfo);
+            if (bodyShape.Length != 0) {
+                sb.Append("\n");
+                sb.Append(BodyShapeInfoToString(c.BodyShapeInfo, numTabs + 1, l?.BodyShapeInfo));
+            }
             
             costumeInfos[name] = c;
             if (startLen == sb.Length)
@@ -437,7 +442,7 @@ namespace PacketCap
             t = "\n" + new string('\t', numTabs + 1);
             sb.Append(t);
             sb.Append("CharacterID=");
-            sb.Append(c.CharacterID.ToString());
+            sb.Append(c.CharacterID);
             if (b == null) {
                 sb.Append(t);
                 sb.Append("BaseCharacter=");
@@ -607,6 +612,29 @@ namespace PacketCap
 
         private static IDictionary<int,long> lastEquipmentInfo = null;
 
+        private static string QuickSlotInfoToString(QuickSlotInfo info,string name,int numTabs) {
+            StringBuilder sb = new StringBuilder();
+            String t = "";
+            if (numTabs != 0) {
+                t = new string('\t', numTabs);
+            }
+            sb.Append(t);
+            sb.Append(name);
+            sb.Append(":");
+            t = "\n" + new string('\t', numTabs + 1);
+            foreach (KeyValuePair<int, string> entry in info.SlotItemClasses)
+            {
+                if (entry.Value != null && entry.Value.Length != 0)
+                {
+                    sb.Append(t);
+                    sb.Append(IntToEquipmentSlot(entry.Key));
+                    sb.Append("=");
+                    sb.Append(entry.Value);
+                }
+            }
+            return sb.ToString();
+        }
+
         private static void PrintInventoryInfoMessage(InventoryInfoMessage msg, object tag)
         {
             //TODO: db connect to share inventory
@@ -616,18 +644,16 @@ namespace PacketCap
             {
                 Console.WriteLine("\t\tstorageID={0} isAvailable={1} storageName={2} storageTag={3}", info.StorageID, info.IsAvailable, info.StorageName, info.StorageTag);
             }
-            Console.WriteLine(ListToString<SlotInfo>(msg.SlotInfos, "SlotInfos", 1));
-            Console.WriteLine(DictToString<int, long>(msg.EquipmentInfo, "EquipmentInfo", 1, lastEquipmentInfo));
-            foreach (KeyValuePair<int, string> entry in msg.QuickSlotInfo.SlotItemClasses)
+            int i = 0;
+            
+            foreach (SlotInfo slot in msg.SlotInfos)
             {
-                if (entry.Value != null && entry.Value.Length != 0)
-                {
-                    Console.WriteLine("\t\t{0}={1}", IntToEquipmentSlot(entry.Key), entry.Value);
-                }
+                Console.WriteLine(SlotInfoToString(slot, String.Format("SlotInfo[{0}]", i++), 1));
             }
+            Console.WriteLine(DictToString<int, long>(msg.EquipmentInfo, "EquipmentInfo", 1, lastEquipmentInfo));
+            Console.WriteLine(QuickSlotInfoToString(msg.QuickSlotInfo, "QuickSlotInfo", 1));
             lastEquipmentInfo = msg.EquipmentInfo;
             Console.WriteLine("\tUnequippableParts=[{0}]", String.Join(",", msg.UnequippableParts));
-
         }
 
         private static void PrintTitleListMessage(TitleListMessage msg, object tag)
@@ -648,11 +674,12 @@ namespace PacketCap
             Console.WriteLine("RandomRankInfoMessage:");
             foreach (RandomRankResultInfo info in msg.RandomRankResult)
             {
-                Console.WriteLine("\tEventID={0}", info.EventID);
-                Console.WriteLine("\tPeriodType={0}", info.PeriodType);
+                Console.WriteLine("\tRandomRankResult:");
+                Console.WriteLine("\t\tEventID={0}", info.EventID);
+                Console.WriteLine("\t\tPeriodType={0}", info.PeriodType);
                 if (info.RandomRankResult != null && info.RandomRankResult.Count != 0)
                 {
-                    Console.WriteLine(ListToString<RankResultInfo>(info.RandomRankResult, "RandomRankResult", 1));
+                    Console.WriteLine(ListToString<RankResultInfo>(info.RandomRankResult, "RandomRankResult", 2));
                 }
             }
         }
@@ -950,8 +977,7 @@ namespace PacketCap
 
 
         private static void PrintSyncFeatureMatrixMessage(SyncFeatureMatrixMessage msg, object tag) {
-            Console.WriteLine("SyncFeatureMatrixMessage:");
-            Console.WriteLine(DictToString<String, String>(msg.FeatureDic, "FeatureDic", 1));
+            Console.WriteLine(DictToString<String, String>(msg.FeatureDic, "SyncFeatureMatrixMessage", 0));
         }
         private static void PrintGiveAPMessage(GiveAPMessage msg, object tag) {
             Console.WriteLine("GiveAPMessage: AP={0}",msg.AP);
@@ -1068,31 +1094,230 @@ namespace PacketCap
             return c;
         }
 
+        private static string PetStatusInfoToString(PetStatusInfo p, string name, int numTabs) {
+            string t = "";
+            if (numTabs != 0) {
+                t = new string('\t', numTabs);
+            }
+            StringBuilder sb = new StringBuilder();
+            sb.Append(t);
+            sb.Append(name);
+            sb.Append(":");
+            t = "\n"+new string('\t', numTabs+1);
+            sb.Append(t);
+            sb.Append("PetID=");
+            sb.Append(p.PetID);
+            sb.Append(t);
+            sb.Append("PetName=");
+            sb.Append(p.PetName);
+            sb.Append(t);
+            sb.Append("PetType=");
+            sb.Append(p.PetType);
+            sb.Append(t);
+            sb.Append("Slot=");
+            sb.Append(p.Slot);
+            sb.Append(t);
+            sb.Append("Level=");
+            sb.Append(p.Level);
+            sb.Append(t);
+            sb.Append("Exp=");
+            sb.Append(p.Exp);
+            sb.Append(t);
+            sb.Append("Desire=");
+            sb.Append(p.Desire);
+            sb.Append(t);
+            sb.Append("PetStatus=");
+            sb.Append(p.PetStatus);
+            sb.Append(t);
+            sb.Append("RemainActiveTime=");
+            sb.Append(p.RemainActiveTime);
+            sb.Append(t);
+            sb.Append("RemainExpiredTime=");
+            sb.Append(p.RemainExpiredTime);
+            sb.Append(t);
+            sb.Append("Skills:");
+            String t2 = "\n" + new string('\t', numTabs + 2);
+            foreach (PetSkillElement e in p.Skills) {
+                sb.Append(t2);
+                sb.Append("SkillID=");
+                sb.Append(e.SkillID);
+                sb.Append(" SlotOrder=");
+                sb.Append(e.SlotOrder);
+                sb.Append(" OpenLevel=");
+                sb.Append(e.OpenLevel);
+                sb.Append(" HasExpireDateTimeInfo=");
+                sb.Append(e.HasExpireDateTimeInfo);
+                sb.Append(" ExpireDateTimeDiff=");
+                sb.Append(e.ExpireDateTimeDiff);
+            }
+            sb.Append(t);
+            sb.Append("Accessories:");
+            foreach (PetAccessoryElement e in p.Accessories) {
+                sb.Append(t2);
+                sb.Append("ItemClass=");
+                sb.Append(e.ItemClass);
+                sb.Append(" SlotOrder=");
+                sb.Append(e.SlotOrder);
+                sb.Append(" AccessorySize=");
+                sb.Append(e.AccessorySize);
+                sb.Append(" RemainingTime=");
+                sb.Append(e.RemainingTime);
+            }
+            sb.Append(t);
+            sb.Append("Stat:");
+            PetStatElement el = p.Stat;
+            sb.Append(t2);
+            sb.Append("RequiredExp=");
+            sb.Append(el.RequiredExp);
+            sb.Append(t2);
+            sb.Append("MaxExp=");
+            sb.Append(el.MaxExp);
+            sb.Append(t2);
+            sb.Append("Hp=");
+            sb.Append(el.Hp);
+            sb.Append(t2);
+            sb.Append("ResDamage=");
+            sb.Append(el.ResDamage);
+            sb.Append(t2);
+            sb.Append("HpRecovery=");
+            sb.Append(el.HpRecovery);
+            sb.Append(t2);
+            sb.Append("DefBreak=");
+            sb.Append(el.DefBreak);
+            sb.Append(t2);
+            sb.Append("AtkBalance=");
+            sb.Append(el.AtkBalance);
+            sb.Append(t2);
+            sb.Append("Atk=");
+            sb.Append(el.Atk);
+            sb.Append(t2);
+            sb.Append("Def=");
+            sb.Append(el.Def);
+            sb.Append(t2);
+            sb.Append("Critical=");
+            sb.Append(el.Critical);
+            sb.Append(t2);
+            sb.Append("ResCritical=");
+            sb.Append(el.ResCritical);
+            return sb.ToString();
+        }
+
+        private static void AppendNotNull(StringBuilder sb, String s) {
+            if (s != null && s.Length != 0)
+            {
+                sb.Append("\n");
+                sb.Append(s);
+            }
+        }
+
         private static string GameJoinMemberInfoToString(GameJoinMemberInfo m, int tabs) {
             if (m == null) {
                 return "";
             }
-            String t = new string('\t', tabs);
+            String t = "";
+            if (tabs != 0) {
+                t = new string('\t', tabs);
+            }
+            
             StringBuilder sb = new StringBuilder();
-            sb.AppendFormat("{0}Name={1}", t, m.Name);
-            sb.AppendFormat("{0}Level={1}", t, m.Level);
+            sb.Append(t);
+            sb.Append("Order=");
+            sb.Append(m.Order);
+            t = "\n" + t;
+            sb.Append(t);
+            sb.Append("Tag=");
+            sb.Append(m.Tag);
+            sb.Append(t);
+            sb.Append("Key=");
+            sb.Append(m.Key);
+            sb.Append(t);
+            sb.Append("Name=");
+            sb.Append(m.Name);
             String c = BaseCharacterToString((BaseCharacter)m.BaseClass);
+            sb.Append(t);
+            sb.Append("Class=");
+            sb.Append(c);
+            sb.Append(t);
+            sb.Append("Level=");
+            sb.Append(m.Level);
+            sb.Append(t);
+            sb.Append("Exp=");
+            sb.Append(m.Exp);
+            sb.Append(t);
+            sb.Append("LevelUpExp=");
+            sb.Append(m.LevelUpExp);
+            sb.Append(t);
+            sb.Append("TitleID");//translate using heroes.db3 and translation xml
+            sb.Append(m.TitleID);
+            sb.Append(t);
+            sb.Append("TitleCount=");
+            sb.Append(m.TitleCount);
+            sb.Append(t);
+            AppendNotNull(sb, DictToString<string, int>(m.Stats, "Stats", 1 + tabs));
+            AppendNotNull(sb, BattleInventoryToString(m.BattleInventory, "BattleInventory", tabs));
+            AppendNotNull(sb, CostumeInfoToString(m.CostumeInfo, tabs, m.Name, "CostumeInfo"));
 
-            sb.AppendFormat("{0}Class={1}", t, c);
-            sb.AppendFormat("{0}TitleID={1}", t, m.TitleID);//translate using heroes.db3 and translation xml
-            sb.AppendFormat("{0}TitleCount={1}", t, m.TitleCount);
-
-
-            sb.AppendFormat(DictToString<string, int>(m.Stats, "Stats", 1+tabs));
-            sb.AppendFormat(CostumeInfoToString(m.CostumeInfo, tabs, m.Name, "CostumeInfo"));
-            sb.AppendFormat("{0}EquippedItems:",t);
-            sb.AppendFormat(DictToString<int,string>(m.EquippedItems, "EquippedItems", 1+tabs));
-
-            if (m.Pet != null) {
-                Console.WriteLine("{0}Pet: Name={1}, Type={2}", t, m.Pet.PetName, m.Pet.PetType);
+            if (m.Pet != null)
+            {
+                AppendNotNull(sb, PetStatusInfoToString(m.Pet,"Pet",1));
             }
 
-            sb.AppendFormat("{0}...", t);//much more info if needed
+            AppendNotNull(sb, DictToString<string, int>(m.SkillList, "SkillList", tabs));
+            AppendNotNull(sb, DictToString<int,string>(m.SpSkills, "SpSkills", tabs));
+            AppendNotNull(sb, DictToString<string, int>(m.VocationSkills, "VocationSkills", tabs));
+
+            sb.Append(t);
+            sb.Append("TransformCoolDown=");
+            sb.Append(m.TransformCoolDown);
+            String t2 = t + "\t";
+            if (m.SkillEnhanceDic != null && m.SkillEnhanceDic.Count != 0) {
+                sb.Append(t);
+                sb.Append("SkillEnhanceDic:");
+                foreach (KeyValuePair<string,BriefSkillEnhance> e in m.SkillEnhanceDic) {
+                    sb.Append(t2);
+                    sb.Append(e.Key);
+                    sb.Append("=(GroupKey=");
+                    sb.Append(e.Value.GroupKey);
+                    sb.Append(" IndexKey=");
+                    sb.Append(e.Value.IndexKey);
+                    sb.Append(" Type=");
+                    sb.Append(e.Value.Type);
+                    sb.Append(" ReduceDurability=");
+                    sb.Append(e.Value.ReduceDurability);
+                    sb.Append(" MaxDurabilityBonus=");
+                    sb.Append(e.Value.MaxDurabilityBonus);
+                    sb.Append(")");
+                }
+            }
+
+
+
+            AppendNotNull(sb, DictToString<int, int>(m.DefMap, "DefMap", tabs));
+            AppendNotNull(sb, DictToString<int, int>(m.ArmorHPMap, "ArmorHPMap", tabs));
+            AppendNotNull(sb, DictToString<int, string>(m.EquippedItems, "EquippedItems", tabs));
+            sb.Append(t);
+            sb.Append("AbilityList=[");
+            sb.Append(String.Join(",", m.AbilityList));
+            sb.Append("]");
+            AppendNotNull(sb, DictToString<string, int>(m.StatusEffectDict, "StatusEffectDict", tabs));
+            AppendNotNull(sb, StatusEffectListToString(m.StatusEffects, "StatusEffects", m.Name, tabs));
+
+            sb.Append(t);
+            sb.Append("DestroyedDef=");
+            sb.Append(m.DestroyedDef);
+            sb.Append(t);
+            sb.Append("IsTeacher");
+            sb.Append(m.IsTeacher);
+            sb.Append(t);
+            sb.Append("IsAssist");
+            sb.Append(m.IsAssist);
+
+            AppendNotNull(sb, DictToString<string, int>(m.GuildLevelBonus, "GuildLevelBonus", tabs));
+
+            sb.Append(t);
+            sb.Append("IsAlive");
+            sb.Append(m.IsAlive);
+
             return sb.ToString();
         }
 
@@ -1198,21 +1423,19 @@ namespace PacketCap
             if (name != null && name.Length != 0) {
                 sb.Append(t);
                 sb.Append(name);
-                sb.Append(":\n");
+                sb.Append(":");
             }
             if (list == null || list.Count == 0) {
                 return sb.ToString();
             }
-            t = new string('\t', numTabs+1);
+            t = "\n"+new string('\t', numTabs+1);
             foreach (T element in list) {
                 if (element == null) {
                     continue;
                 }
                 sb.Append(t);
                 sb.Append(element);
-                sb.Append("\n");
             }
-            sb.Remove(sb.Length - 1, 1);
             return sb.ToString();
         }
 
@@ -1513,14 +1736,13 @@ namespace PacketCap
                 t = new string('\t', numTabs);
                 sb.Append(t);
             }
-
-            t = new string('\t', numTabs + 1);
             sb.Append(name);
             sb.Append(":");
-            if (dict == null)
+            if (dict == null || dict.Count == 0)
             {
                 return sb.ToString();
             }
+            t = new string('\t', numTabs + 1);
             int startLen = sb.Length;
             foreach (KeyValuePair<T1, T2> entry in dict)
             {
@@ -1612,11 +1834,28 @@ namespace PacketCap
 
         private static void PrintTodayMissionInitializeMessage(TodayMissionInitializeMessage msg, object tag) {
             Console.WriteLine("TodayMissionInitializeMessage:");
-            Console.WriteLine("\t{0}", String.Join("\n\t", msg.ToString().Split('\n')));
+
+            Dictionary<int, TodayMissinState> missionStates = GetPrivateProperty<Dictionary<int, TodayMissinState>>(msg,"MissionState");
+            int remainResetMinute = GetPrivateProperty<int>(msg, "RemainResetMinute");
+
+            Console.WriteLine("\tRemainResetMinute={0}",remainResetMinute);
+            if (missionStates != null && missionStates.Count != 0) {
+                Console.WriteLine("\tMissionStates:");
+                foreach (KeyValuePair<int,TodayMissinState> t in missionStates) {
+                    if (t.Value != null) {
+                        Console.WriteLine("\t\t{0}=(ID={1} CurrentCount={2} IsFinished={3}", t.Key, t.Value.ID, t.Value.CurrentCount, t.Value.IsFinished);
+                    }
+                    
+                }
+            }
         }
 
         private static void PrintAPMessage(APMessage msg, object tag) {
-            Console.WriteLine(msg.ToString());
+            Console.WriteLine("APMessage:");
+            Console.WriteLine("\tAP={0}",msg.AP);
+            Console.WriteLine("\tMaxAP={0}",msg.MaxAP);
+            Console.WriteLine("\tNextBonusTimeTicks={0}",msg.NextBonusTimeTicks);
+            Console.WriteLine("\tAPBonusInterval={0}",msg.APBonusInterval);
         }
 
         private static void PrintGuildResultMessage(GuildResultMessage msg, object tag) {
@@ -1625,7 +1864,15 @@ namespace PacketCap
 
         private static void PrintCostumeUpdateMessage(CostumeUpdateMessage msg, object tag) {
             //TODO: db connect
-            Console.WriteLine(CostumeInfoToString(msg.CostumeInfo, 0, character.CharacterID, "CostumeUpdateMessage"));
+            string s = CostumeInfoToString(msg.CostumeInfo, 0, character.CharacterID, "CostumeUpdateMessage");
+            if (s.Length == 0)
+            {
+                Console.WriteLine("CostumeUpdateMessage:");
+            }
+            else
+            {
+                Console.WriteLine(s);
+            }
         }
 
         private static IDictionary<int, long> lastEquipInfos = null;
@@ -1637,15 +1884,176 @@ namespace PacketCap
 
         private static IDictionary<string, int> lastStats = null;
         private static void PrintUpdateStatMessage(UpdateStatMessage msg, object tag) {
-            Console.WriteLine(DictToString<string, int>(msg.Stat, "UpdateStatMessage", 0, lastStats));
+            string s = DictToString<string, int>(msg.Stat, "UpdateStatMessage", 0, lastStats);
+            if (s.Length == 0)
+            {
+                Console.WriteLine("UpdateStatMessage:");
+            }
+            else {
+                Console.WriteLine(s);
+            }
             
             lastStats = msg.Stat;
         }
 
+        private static string SlotInfoToString(SlotInfo i,string name,int numTabs) {
+            StringBuilder sb = new StringBuilder();
+            String t = "";
+            if (numTabs != 0) {
+                t = new string('\t',numTabs);
+            }
+            sb.Append(t);
+            sb.Append(name);
+            sb.Append(":");
+            t = "\n"+new string('\t', numTabs+1);
+            sb.Append(t);
+            sb.Append("ItemID=");
+            sb.Append(i.ItemID);
+            sb.Append(t);
+            sb.Append("ItemClass=");
+            sb.Append(i.ItemClass);
+            sb.Append(t);
+            sb.Append("Num=");
+            sb.Append(i.Num);
+            sb.Append(t);
+            sb.Append("Tab=");
+            sb.Append(i.Tab);
+            sb.Append(t);
+            sb.Append("Slot=");
+            sb.Append(i.Slot);
+            sb.Append(t);
+            sb.Append("IsExpireable=");
+            sb.Append(i.IsExpireable);
+            sb.Append(t);
+            if (i.IsExpireable) {
+                //both are -1 if not expirable
+                sb.Append("ExpireDateTimeDiff=");
+                sb.Append(i.ExpireDateTimeDiff);
+                sb.Append(t);
+                sb.Append("ExpireDateTimeTick=");
+                sb.Append(i.ExpireDateTimeTick);
+                sb.Append(t);
+            }
+            sb.Append("Durability=");
+            sb.Append(i.Durability);
+            sb.Append(" ");
+            sb.Append("MaxDurability=");
+            sb.Append(i.MaxDurability);
+            sb.Append(" ");
+            sb.Append("MaxDurabilityBonus=");
+            sb.Append(i.MaxDurabilityBonus);
+            sb.Append(t);
+            sb.Append("Tradable=");
+            sb.Append(i.Tradable);
+            
+            if (i.ExpanderName != null && i.ExpanderName.Length != 0) {
+                sb.Append(t);
+                sb.Append("ExpanderName=");
+                sb.Append(i.ExpanderName);
+            }
+            
+            sb.Append(t);
+            sb.Append("Price=");
+            sb.Append(i.MinPrice);
+            sb.Append("/");
+            sb.Append(i.AvgPrice);
+            sb.Append("/");
+            sb.Append(i.MaxPrice);
+            
+            sb.Append(t);
+            sb.Append("Colors=(");
+            sb.Append(IntToRGB(i.Color1));
+            sb.Append(",");
+            sb.Append(IntToRGB(i.Color2));
+            sb.Append(",");
+            sb.Append(IntToRGB(i.Color3));
+            sb.Append(")");
+            String t2 = t+"\t";
+            if (i.Attributes != null && i.Attributes.Count != 0) {
+                sb.Append(t);
+                sb.Append("Attributes:");
+                foreach (ItemAttributeElement attr in i.Attributes)
+                {
+                    sb.Append(t2);
+                    sb.Append(attr.AttributeName);
+                    sb.Append("=");
+                    sb.Append(attr.Value);
+                    sb.Append(" Arg=");
+                    sb.Append(attr.Arg);
+                    sb.Append(" Arg2=");
+                    sb.Append(attr.Arg2);
+                }
+            }
+            if (i.PrefixEnchantStatus.Count != 0) {
+                AppendNotNull(sb, DictToString<int, bool>(i.PrefixEnchantStatus, "PrefixEnchantStatus", numTabs + 1));
+            }
+            if (i.SuffixEnchantStatus.Count != 0) {
+                AppendNotNull(sb, DictToString<int, bool>(i.SuffixEnchantStatus, "SuffixEnchantStatus", numTabs + 1));
+            }
+            return sb.ToString();
+        }
+
+        public static bool PropertiesEqual<T>(T self, T to, params string[] ignore) where T : class
+        {
+            if (self != null && to != null)
+            {
+                Type type = typeof(T);
+                List<string> ignoreList = new List<string>(ignore);
+                foreach (System.Reflection.PropertyInfo pi in type.GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance))
+                {
+                    if (!ignoreList.Contains(pi.Name))
+                    {
+                        object selfValue = type.GetProperty(pi.Name).GetValue(self, null);
+                        object toValue = type.GetProperty(pi.Name).GetValue(to, null);
+
+                        if (selfValue != toValue && (selfValue == null || !selfValue.Equals(toValue)))
+                        {
+                            return false;
+                        }
+                    }
+                }
+                return true;
+            }
+            return self == to;
+        }
+
+        private static bool CompareDictionaries<T1, T2>(IDictionary<T1,T2> d1, IDictionary<T1, T2> d2) {
+            if (d1 == null || d2 == null) {
+                return d1 == d2;
+            }
+            if (d1.Count != d2.Count) {
+                return false;
+            }
+            return !d1.Except(d2).Any();
+        }
+        
+        private static Dictionary<string,SlotInfo> inventoryItems = new Dictionary<string,SlotInfo>();
         private static void PrintUpdateInventoryInfoMessage(UpdateInventoryInfoMessage msg, object tag) {
             ICollection<SlotInfo> slotInfos = GetPrivateProperty<ICollection<SlotInfo>>(msg, "slotInfos");
-            Console.WriteLine(ListToString<SlotInfo>(slotInfos, "UpdateInventoryInfoMessage", 0));
-            //TODO: fully parse slotinfos with a function
+            Console.WriteLine("UpdateInventoryInfoMessage:");
+
+            Dictionary<string, SlotInfo> newInventoryItems = new Dictionary<string, SlotInfo>();
+            foreach (SlotInfo slot in slotInfos)
+            {
+                string slotStr = slot.Slot != -1 ? slot.Slot.ToString() : slot.ItemClass;
+                string infoStr = SlotInfoToString(slot, String.Format("SlotInfo[T={0},S={1}]", slot.Tab, slotStr), 1);
+                string concated = Regex.Replace(infoStr, @"\s+", "");
+                newInventoryItems[concated] = slot;
+                if (inventoryItems.ContainsKey(concated)) {
+                    inventoryItems.Remove(concated);
+                }
+                else {
+                    //found a new item
+                    Console.WriteLine(infoStr);
+                }
+            }
+            foreach (KeyValuePair<string, SlotInfo> entry in inventoryItems)
+            {
+                string slotStr = entry.Value.Slot != -1 ? entry.Value.Slot.ToString() : entry.Value.ItemClass;
+                Console.WriteLine("\t\tSlotInfo[T={0},S={1}]: empty", entry.Value.Tab, slotStr);
+            }
+            
+            inventoryItems = newInventoryItems;
         }
 
         private static void PrintFriendshipInfoListMessage(FriendshipInfoListMessage msg, object tag) {
@@ -1764,7 +2172,10 @@ namespace PacketCap
                 }
             }
             if (msg.SlotInfos.Count != 0) {
-                Console.WriteLine(ListToString<SlotInfo>(msg.SlotInfos, "SlotInfos", 1));
+                int i = 0;
+                foreach(SlotInfo info in msg.SlotInfos) {
+                    Console.WriteLine(SlotInfoToString(info, String.Format("SlotInfos[{0}]", i++), 1));
+                }
             }
         }
 
@@ -1796,18 +2207,48 @@ namespace PacketCap
             return sb.ToString();
         }
 
-        private static void PrintUpdateBattleInventoryInTownMessage(UpdateBattleInventoryInTownMessage msg, object tag) {
-            Console.WriteLine("UpdateBattleInventoryInTownMessage:");
-            BattleInventory b = msg.BattleInventory;
-            Console.WriteLine("\tUsedList:");
-            foreach (KeyValuePair<string, ConsumablesInfo> entry in b.UsedList) {
-                Console.WriteLine("\t\t{0}={1}",entry.Key, ConsumablesInfoToString(entry.Value));
+        private static string BattleInventoryToString(BattleInventory b, string name, int numTabs) {
+            StringBuilder sb = new StringBuilder();
+            String t = "";
+            if (numTabs != 0) {
+                t = new string('\t', numTabs);
             }
-            Console.WriteLine("\tConsumables:");
-            foreach (KeyValuePair<int, ConsumablesInfo> entry in b.Consumables)
+            sb.Append(t);
+            sb.Append(name);
+            sb.Append(":");
+            t = "\n"+new string('\t', numTabs);
+
+            if (b.UsedList != null && b.UsedList.Count != 0)
             {
-                Console.WriteLine("\t\t{0}={1}", entry.Key, ConsumablesInfoToString(entry.Value));
+                sb.Append(t);
+                sb.Append("UsedList:");
+                foreach (KeyValuePair<string, ConsumablesInfo> entry in b.UsedList)
+                {
+                    sb.Append(t);
+                    sb.Append("\t");
+                    sb.Append(entry.Key);
+                    sb.Append("=");
+                    sb.Append(ConsumablesInfoToString(entry.Value));
+                }
             }
+            if (b.Consumables != null && b.Consumables.Count != 0)
+            {
+                sb.Append(t);
+                sb.Append("Consumables:");
+                foreach (KeyValuePair<int, ConsumablesInfo> entry in b.Consumables)
+                {
+                    sb.Append(t);
+                    sb.Append("\t");
+                    sb.Append(entry.Key);
+                    sb.Append("=");
+                    sb.Append(ConsumablesInfoToString(entry.Value));
+                }
+            }
+            return sb.ToString();
+        }
+
+        private static void PrintUpdateBattleInventoryInTownMessage(UpdateBattleInventoryInTownMessage msg, object tag) {
+            Console.WriteLine(BattleInventoryToString(msg.BattleInventory,"UpdateBattleInventoryInTownMessage:",0));
         }
 
         private static void PrintBingoBoardResultMessage(BingoBoardResultMessage msg, object tag) {
@@ -1853,7 +2294,10 @@ namespace PacketCap
             Console.WriteLine("\tStorageCount={0}",msg.StorageCount);
             Console.WriteLine("\tGoldLimit={0}",msg.GoldLimit);
             Console.WriteLine("\tAccessLimtiTag={0}",msg.AccessLimtiTag);
-            Console.WriteLine(ListToString<SlotInfo>(msg.SlotInfos,"SlotInfos",1));
+            int i = 0;
+            foreach (SlotInfo slot in msg.SlotInfos) {
+                Console.WriteLine(SlotInfoToString(slot, String.Format("SlotInfo[{0}]", i++), 1));
+            }
         }
 
         private static void PrintCashshopTirCoinResultMessage(CashshopTirCoinResultMessage msg, object tag) {
@@ -1891,7 +2335,8 @@ namespace PacketCap
         }
 
         private static void PrintQuickSlotInfoMessage(QuickSlotInfoMessage msg, object tag) {
-            Console.WriteLine(msg.ToString());
+            QuickSlotInfo info = GetPrivateProperty<QuickSlotInfo>(msg, "info");
+            Console.WriteLine(QuickSlotInfoToString(info, "QuickSlotInfoMessage", 0));
         }
 
         private static void PrintGuildInfoMessage(GuildInfoMessage msg, object tag) {
@@ -2207,8 +2652,10 @@ namespace PacketCap
 
         private static void PrintMonsterDamageReportMessage(MonsterDamageReportMessage msg, object tag)
         {
-            Console.WriteLine("MonsterDamageReportMessage: Target={0}");
-            Console.WriteLine(ListToString(msg.TakeDamageList, "", 0));
+            Console.WriteLine("MonsterDamageReportMessage: Target={0}",msg.Target);
+            foreach (MonsterTakeDamageInfo i in msg.TakeDamageList) {
+                Console.WriteLine("\tMonsterTakeDamageInfo: Attacker={0} AttackTime={1} ActionName={2} Damage={3}",i.Attacker,i.AttackTime,i.ActionName,i.Damage);
+            }
         }
 
         private static Dictionary<int,PartyMemberInfo> lastPartyMember = new Dictionary<int,PartyMemberInfo>();
@@ -2222,7 +2669,7 @@ namespace PacketCap
             sb.Append(t);
             sb.Append(name);
             sb.Append(":");
-            t = "\n"+new string('\t', numTabs);
+            t = "\n"+new string('\t', numTabs+1);
             sb.Append(t);
             sb.Append("CharacterID=");
             sb.Append(m.CharacterID);
@@ -2230,7 +2677,7 @@ namespace PacketCap
             PartyMemberInfo last = null;
             lastPartyMember.TryGetValue(m.NexonSN, out last);
             
-            if (lastParty == null || m.CharacterID != last.CharacterID)
+            if (last == null || m.CharacterID != last.CharacterID)
             {
                 sb.Append(t);
                 sb.Append("Character=");
@@ -2242,36 +2689,36 @@ namespace PacketCap
                 sb.Append("Level=");
                 sb.Append(m.Level);
             }
-            if (lastParty == null || m.SlotNum != last.SlotNum)
+            if (last == null || m.SlotNum != last.SlotNum)
             {
                 sb.Append(t);
                 sb.Append("SlotNum=");
                 sb.Append(m.SlotNum);
             }
-            if (lastParty == null || m.State != last.State)
+            if (last == null || m.State != last.State)
             {
                 sb.Append(t);
                 sb.AppendFormat("State=");
                 sb.Append(m.State);
             }
-            if (lastParty == null || m.LatestPing != last.LatestPing) {
+            if (last == null || m.LatestPing != last.LatestPing) {
                 sb.Append(t);
                 sb.Append("LatestPing=");
                 sb.Append(m.LatestPing);
             }
-            if (lastParty == null || m.LatestFrameRate != last.LatestFrameRate)
+            if (last == null || m.LatestFrameRate != last.LatestFrameRate)
             {
                 sb.Append(t);
                 sb.Append("LatestFrameRate=");
                 sb.Append(m.LatestFrameRate);
             }
-            if (lastParty == null || m.IsReturn != last.IsReturn)
+            if (last == null || m.IsReturn != last.IsReturn)
             {
                 sb.Append(t);
                 sb.Append("IsReturn=");
                 sb.Append(m.IsReturn);
             }
-            if (lastParty == null || m.IsEventJumping != last.IsEventJumping)
+            if (last == null || m.IsEventJumping != last.IsEventJumping)
             {
                 sb.Append(t);
                 sb.Append("IsEventJumping=");
@@ -2300,9 +2747,12 @@ namespace PacketCap
             }
             
             int i = 0;
-            PartyMemberInfo[] lastList = lastParty.Members.ToArray();
-            foreach (PartyMemberInfo m in msg.Members) {
-                Console.WriteLine(PartyMemberInfoToString(m, String.Format("Member[{0}]:", i++), 1));
+            if (lastParty?.Members != null && lastParty.Members.Count != 0) {
+                PartyMemberInfo[] lastList = lastParty.Members.ToArray();
+                foreach (PartyMemberInfo m in msg.Members)
+                {
+                    Console.WriteLine(PartyMemberInfoToString(m, String.Format("Member[{0}]", i++), 1));
+                }
             }
             lastParty = msg;
         }
@@ -2616,7 +3066,13 @@ namespace PacketCap
                 Console.WriteLine("\t\tQuestSectorInfo[{0}]:",i++);
                 Console.WriteLine("\t\t\tGroupID={0}",s.GroupID);
                 Console.WriteLine("\t\t\tBsp={0}",s.Bsp);
-                Console.WriteLine("\t\t\tEntities=[{0}]",String.Join(",",s.Entities));
+                int j = 0;
+                foreach (String entity in s.Entities) {
+                    Console.WriteLine("\t\t\tEntities[{0}]:",j++);
+                    String tabbedEntity = entity.Replace("\n", "\n\t\t\t");
+                    Console.WriteLine(tabbedEntity);
+                }
+                
                 Console.WriteLine("\t\t\tConnectionInfos:");
                 foreach (QuestSectorConnectionInfo c in s.ConnectionInfos) {
                     Console.WriteLine("\t\t\t\tFrom={0} FromTrigger={1} To={2} ToSpawn={3}",c.From,c.FromTrigger,c.To,c.ToSpawn);
@@ -2654,6 +3110,32 @@ namespace PacketCap
             foreach (ShipInfo s in msg.ShipList) {
                 Console.WriteLine(ShipInfoToString(s, String.Format("ShipInfo[{0}]", i++), 1));
             }
+        }
+
+        private static void PrintLearnNewSkillResultMessage(LearnNewSkillResultMessage msg, object tag)
+        {
+            Console.WriteLine("LearnNewSkillResultMessage: Result={0}", (LearnNewSkillResultMessage.LearnNewSkillResult)msg.result);
+        }
+
+        private static void PrintLearnSkillMessage(LearnSkillMessage msg, object tag)
+        {
+            Console.WriteLine("LearnSkillMessage:");
+            Console.WriteLine("\tSkillID={0}",msg.SkillID);
+            Console.WriteLine("\tAP={0}",msg.AP);
+        }
+        private static void PrintLearnNewSkillMessage(LearnNewSkillMessage msg, object tag)
+        {
+            Console.WriteLine("LearnNewSkillMessage: SkillID={0}",msg.SkillID);
+        }
+
+        private static void PrintTodayMissionCompleteMessage(TodayMissionCompleteMessage msg, object tag)
+        {
+            Console.WriteLine("TodayMissionCompleteMessage: ID={0}",msg.ID);
+        }
+
+        private static void PrintEndTradeSessionMessage(EndTradeSessionMessage msg, object tag)
+        {
+            Console.WriteLine("EndTradeSessionMessage: []");
         }
     }
 }

@@ -295,30 +295,36 @@ namespace PacketCap
                 {
                     String errMsg = e.Message;
                     String className = "";
-                    if (classNames.TryGetValue(p.CategoryId, out className) && !unhandledTypes.Contains(className)) {
+                    int categoryId = p.CategoryId;
+                    ShortenBuffer(pLen);
+                    MatchCollection mc;
+                    if (classNames.TryGetValue(categoryId, out className) && !unhandledTypes.Contains(className))
+                    {
                         String methodStr = GenMethodString(className);
                         FileLog.Log("unhandled.log", methodStr);
-                        int lastDot = className.LastIndexOf('.');
-                        String trimmed = className.Substring(lastDot + 1);
-                        unhandledTypes.Add(trimmed);
-                        Console.WriteLine("{0}: Handler missing for class {1}", connString, className);
+                        mc = Regex.Matches(className, @"\.([^\.]+)$");
+                        className = mc[0].Groups[1].ToString();
+                        
+                        unhandledTypes.Add(className);
+                        Console.WriteLine("{0}: Handler missing for class {1} from dict", connString, className);
                         return;
                     }
-                    MatchCollection mc = Regex.Matches(errMsg, @"\.([^,\.]{2,}),");
-                    foreach (Match m in mc)
-                    {
-                        className = m.Groups[1].ToString();
-                        if (!unhandledTypes.Contains(className)) {
+                    mc = Regex.Matches(errMsg, @"\.([^,\.]{2,})(,|$)");
+                    if (mc.Count != 0) {
+                        className = mc[0].Groups[1].ToString();
+                        if (!unhandledTypes.Contains(className))
+                        {
                             String methodStr = GenMethodString(className);
                             FileLog.Log("unhandled.log", methodStr);
                             unhandledTypes.Add(className);
-                            Console.WriteLine("{0}: Handler missing for class {1}", connString, className);
+                            Console.WriteLine("{0}: Handler missing for class {1} from error", connString, className);
                             return;
                         }
                     }
+                    
                     Console.WriteLine("{0}: Unknown class error {1}", connString, errMsg);
                     
-                    ShortenBuffer(pLen);
+                    
                 }
                 catch (System.Runtime.Serialization.SerializationException e)
                 {
