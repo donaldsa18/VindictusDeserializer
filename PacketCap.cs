@@ -16,7 +16,7 @@ using ServiceCore.EndPointNetwork;
 
 namespace PacketCap
 {
-    class PacketCap
+    public class PacketCap
     {
         private byte[] buffer = new byte[66000];
         private byte[] newbuffer = new byte[66000];
@@ -375,7 +375,7 @@ namespace PacketCap
         }
 
 
-        private static string GenMethodString(Type t)
+        public static string GenMethodString(Type t)
         {
             if (t == null)
             {
@@ -383,7 +383,7 @@ namespace PacketCap
                 return "";
             }
             StringBuilder sb = new StringBuilder();
-            sb.Append("\nprivate static void Print");
+            sb.Append("\npublic static void Print");
             sb.Append(t.Name);
             sb.Append("(");
             sb.Append(t.Name);
@@ -399,13 +399,15 @@ namespace PacketCap
             string name = p.Name;
             Type type = p.PropertyType;
             bool hasToString = type.GetMethod("ToString", BindingFlags.Public | BindingFlags.Instance, null, CallingConventions.Any, new Type[0], null)?.DeclaringType == type;
-            bool isPrim = type.IsPrimitive || type == typeof(string) || type == typeof(decimal) || type == typeof(DateTime);
+            bool isPrim = type.IsPrimitive || type == typeof(string) || type == typeof(decimal) || type == typeof(DateTime) || type.IsEnum;
             sb.Append("\t");
             if (!hasToString && !isPrim)
             {
                 sb.Append(@"//");
             }
             sb.Append("Console.WriteLine(\"");
+            sb.Append('\\');
+            sb.Append("t");
             sb.Append(name);
             sb.Append("={0}\",msg.");
             sb.Append(name);
@@ -457,7 +459,7 @@ namespace PacketCap
                         sb.Append(">(msg, \"");
                         sb.Append(name);
                         sb.Append("\");\n");
-                        sb.Append(PropertyInfoToLine(p));
+                        sb.Append(PropertyInfoToLine(p).Replace("msg.",""));
                     }
                 }
             }
@@ -636,5 +638,7 @@ namespace PacketCap
             }
             return null;
         }
+
+        
     }
 }
