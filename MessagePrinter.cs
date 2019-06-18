@@ -1587,17 +1587,21 @@ namespace PacketCap
 
         public static void PrintChangeMasterMessage(ChangeMasterMessage msg, object tag)
         {
-            Console.WriteLine(msg.ToString());
+            Console.WriteLine("ChangeMasterMessage:");
+            Console.WriteLine("\tNewMasterName={0}", msg.NewMasterName); //System.String has a toString()
         }
 
         public static void PrintGuildGainGPMessage(GuildGainGPMessage msg, object tag)
         {
-            Console.WriteLine(msg.ToString());
+            Console.WriteLine("GuildGainGPMessage:");
+            Console.WriteLine("\tGuildPoint={0}", msg.GuildPoint); //System.Int64 has a toString()
+            Console.WriteLine(DictToString<byte,int>(msg.DailyGainGP,"DailyGainGP",1)); //System.Collections.Generic.Dictionary`2[System.Byte,System.Int32]
         }
 
         public static void PrintGuildLevelUpMessage(GuildLevelUpMessage msg, object tag)
         {
-            Console.WriteLine(msg.ToString());
+            Console.WriteLine("GuildLevelUpMessage:");
+            Console.WriteLine("\tLevel={0}", msg.Level); //System.Int32 has a toString()
         }
 
         private static string ListToString<T>(ICollection<T> list, String name, int numTabs)
@@ -1667,7 +1671,19 @@ namespace PacketCap
         }
         public static void PrintHousingPartyInfoMessage(HousingPartyInfoMessage msg, object tag)
         {
-            Console.WriteLine(msg.ToString());
+            Console.WriteLine("HousingPartyInfoMessage:");
+            Console.WriteLine("\tHousingID={0}", msg.HousingID); //System.Int64 has a toString()
+            Console.WriteLine("\tPartySize={0}", msg.PartySize); //System.Int32 has a toString()
+            Console.WriteLine("\tMembers:");
+            foreach (HousingPartyMemberInfo m in msg.Members) {
+                Console.WriteLine("\t\tHousingPartyMemberInfo:");
+                Console.WriteLine("\t\t\tNexonSN={0}", m.NexonSN); //System.Int32 has a toString()
+                Console.WriteLine("\t\t\tCharacter={0}", m.Character); //ServiceCore.CharacterServiceOperations.BaseCharacter
+                Console.WriteLine("\t\t\tCharacterName={0}", m.CharacterName); //System.String has a toString()
+                Console.WriteLine("\t\t\tSlotNumber={0}", m.SlotNumber); //System.Int32 has a toString()
+                Console.WriteLine("\t\t\tLevel={0}", m.Level); //System.Int32 has a toString()
+            }
+            Console.WriteLine("\tMembers={0}",msg.Members); //System.Collections.Generic.ICollection`1[ServiceCore.EndPointNetwork.Housing.HousingPartyMemberInfo]
         }
 
         public static void PrintAddFriendShipResultMessage(AddFriendShipResultMessage msg, object tag)
@@ -1678,12 +1694,15 @@ namespace PacketCap
 
         public static void PrintHousingInvitationRejectMessage(HousingInvitationRejectMessage msg, object tag)
         {
-            Console.WriteLine(msg.ToString());
+            Console.WriteLine("HousingInvitationRejectMessage: HousingID={0}",msg.HousingID);
         }
 
         public static void PrintEnhanceSuccessRatioDebugMessage(EnhanceSuccessRatioDebugMessage msg, object tag)
         {
-            Console.WriteLine(msg.ToString());
+            Console.WriteLine("EnhanceSuccessRatioDebugMessage:");
+            Console.WriteLine("\tSuccessRatio={0}", msg.SuccessRatio); //System.Single has a toString()
+            Console.WriteLine("\tBonusRatio={0}", msg.BonusRatio); //System.Single has a toString()
+            Console.WriteLine("\tFeaturebonusratio={0}", msg.Featurebonusratio); //System.Single has a toString()
         }
 
         public static void PrintHasSecondPasswordMessage(HasSecondPasswordMessage msg, object tag)
@@ -1753,7 +1772,9 @@ namespace PacketCap
 
         public static void PrintAvatarSynthesisRequestMessage(AvatarSynthesisRequestMessage msg, object tag)
         {
-            Console.WriteLine(msg.ToString());
+            Console.WriteLine("AvatarSynthesisRequestMessage:");
+            Console.WriteLine("\tFirstItemID={0}", msg.FirstItemID); //System.Int64 has a toString()
+            Console.WriteLine("\tSecondItemID={0}", msg.SecondItemID); //System.Int64 has a toString()
         }
 
         public static void PrintGameResourceRespondMessage(GameResourceRespondMessage msg, object tag)
@@ -1823,17 +1844,25 @@ namespace PacketCap
 
         public static void PrintEnchantLimitlessMessage(EnchantLimitlessMessage msg, object tag)
         {
-            Console.WriteLine(msg.ToString());
+            Console.WriteLine("EnchantLimitlessMessage:");
+            Console.WriteLine("\tenchantID={0}", msg.enchantID); //System.Int64 has a toString()
+            Console.WriteLine("\tenchantLimitlessID={0}", msg.enchantLimitlessID); //System.Int64 has a toString()
         }
 
         public static void PrintRequestBraceletCombinationMessage(RequestBraceletCombinationMessage msg, object tag)
         {
-            Console.WriteLine(msg.ToString());
+            Console.WriteLine("RequestBraceletCombinationMessage:");
+            Console.WriteLine("\tBreaceletItemID={0}", msg.BreaceletItemID); //System.Int64 has a toString()
+            Console.WriteLine("\tGemstoneItemID={0}", msg.GemstoneItemID); //System.Int64 has a toString()
+            Console.WriteLine("\tGemstoneIndex={0}", msg.GemstoneIndex); //System.Int32 has a toString()
+            Console.WriteLine("\tIsChanging={0}", msg.IsChanging); //System.Boolean has a toString()
         }
 
         public static void PrintSwapHousingItemMessage(SwapHousingItemMessage msg, object tag)
         {
-            Console.WriteLine(msg.ToString());
+            Console.WriteLine("SwapHousingItemMessage:");
+            Console.WriteLine("\tFrom={0}", msg.From); //System.Int32 has a toString()
+            Console.WriteLine("\tTo={0}", msg.To); //System.Int32 has a toString()
         }
 
         public static void PrintMarbleProcessNodeResultMessage(MarbleProcessNodeResultMessage msg, object tag)
@@ -1848,12 +1877,15 @@ namespace PacketCap
 
         public static void PrintSetQuoteMessage(SetQuoteMessage msg, object tag)
         {
-            Console.WriteLine(msg.ToString());
+            Console.WriteLine("SetQuoteMessage:");
+            Console.WriteLine("\tQuote={0}", msg.Quote); //System.String has a toString()
         }
 
         public static void PrintRequestAttendanceRewardMessage(RequestAttendanceRewardMessage msg, object tag)
         {
-            Console.WriteLine(msg.ToString());
+            Console.WriteLine("RequestAttendanceRewardMessage:");
+            Console.WriteLine("\tEventType={0}", msg.EventType); //System.Int32 has a toString()
+            Console.WriteLine("\tIsBonus={0}", msg.IsBonus); //System.Boolean has a toString()
         }
 
         public static void PrintHousingGameHostedMessage(HousingGameHostedMessage msg, object tag)
@@ -1886,7 +1918,11 @@ namespace PacketCap
 
         public static void PrintSecondPasswordResultMessage(SecondPasswordResultMessage msg, object tag)
         {
-            Console.WriteLine(msg.ToString());
+            Console.WriteLine("SecondPasswordResultMessage:");
+            Console.WriteLine("\tOperationType={0}", msg.OperationType); //ServiceCore.EndPointNetwork.SecondPasswordResultMessage+ProcessType
+            Console.WriteLine("\tPassed={0}", msg.Passed); //System.Boolean has a toString()
+            Console.WriteLine("\tFailCount={0}", msg.FailCount); //System.Int32 has a toString()
+            Console.WriteLine("\tRetryLockedSec={0}", msg.RetryLockedSec); //System.Int32 has a toString()
         }
 
         private static string IntToDecorationSlot(int key)
@@ -2056,7 +2092,9 @@ namespace PacketCap
 
         public static void PrintSystemMessage(SystemMessage msg, object tag)
         {
-            Console.WriteLine(msg.ToString());
+            Console.WriteLine("SystemMessage:");
+            Console.WriteLine("\tCategory={0}", msg.Category); //System.Byte has a toString()
+            Console.WriteLine("\tMessage={0}", msg.Message); //ServiceCore.EndPointNetwork.HeroesString has a toString()
         }
 
         public static void PrintNpcTalkMessage(NpcTalkMessage msg, object tag)
@@ -2077,7 +2115,9 @@ namespace PacketCap
 
         public static void PrintUpdateStoryGuideMessage(UpdateStoryGuideMessage msg, object tag)
         {
-            Console.WriteLine(msg.ToString());
+            Console.WriteLine("UpdateStoryGuideMessage:");
+            Console.WriteLine("\tTargetLandMark={0}", msg.TargetLandMark); //System.String has a toString()
+            Console.WriteLine("\tGuideMessage={0}", msg.GuideMessage); //System.String has a toString()
         }
 
         public static void PrintAddFriendshipInfoMessage(AddFriendshipInfoMessage msg, object tag)
@@ -2087,7 +2127,29 @@ namespace PacketCap
 
         public static void PrintSkillListMessage(SkillListMessage msg, object tag)
         {
-            Console.WriteLine(msg.ToString());
+            Console.WriteLine("SkillListMessage:");
+            Console.WriteLine("\tLearningSkillID={0}",msg.LearningSkillID);
+            Console.WriteLine("\tCurrentAp={0}",msg.CurrentAp);
+            Console.WriteLine("\tIsResetVocation={0}",msg.IsResetVocation);
+
+            Console.WriteLine("\tSkillList:");
+            int i = 0;
+            foreach(BriefSkillInfo b in msg.SkillList) {
+                Console.WriteLine("\tBriefSkillInfo[{0}]:",i++);
+                Console.WriteLine("\t\tSkillID={0}", b.SkillID); //System.String has a toString()
+                Console.WriteLine("\t\tBaseRank={0}", b.BaseRank); //System.Int32 has a toString()
+                Console.WriteLine("\t\tFinalRank={0}", b.FinalRank); //System.Int32 has a toString()
+                Console.WriteLine("\t\tRequiredAP={0}", b.RequiredAP); //System.Int32 has a toString()
+                Console.WriteLine("\t\tIsLocked={0}", b.IsLocked); //System.Byte has a toString()
+                Console.WriteLine("\t\tCanStartTraining={0}", b.CanStartTraining); //System.Byte has a toString()
+                Console.WriteLine("\t\tCurrentAP={0}", b.CurrentAP); //System.Int32 has a toString()
+                Console.WriteLine("\t\tResetSkillAP={0}", b.ResetSkillAP); //System.Int32 has a toString()
+                Console.WriteLine("\t\tUntrainSkillAP={0}", b.UntrainSkillAP); //System.Int32 has a toString()
+                Console.WriteLine("\t\tEnhances:");
+                foreach (BriefSkillEnhance e in b.Enhances) {
+                    Console.WriteLine("\tBriefSkillEnhance: GroupKey={0} IndexKey={1} Type={2} ReduceDurability={3} MaxDurabilityBonus={4}", e.GroupKey, e.IndexKey, e.Type, e.ReduceDurability, e.MaxDurabilityBonus);
+                }
+            }
         }
 
         public static void PrintLoginOkMessage(LoginOkMessage msg, object tag)
@@ -2135,7 +2197,10 @@ namespace PacketCap
 
         public static void PrintGuildResultMessage(GuildResultMessage msg, object tag)
         {
-            Console.WriteLine(msg.ToString());
+            Console.WriteLine("GuildResultMessage:");
+            Console.WriteLine("\tResult={0}",msg.Result);
+            Console.WriteLine("\tArg={0}",msg.Arg);
+            Console.WriteLine("\tGuildID={0}",msg.GuildID);
         }
 
         public static void PrintCostumeUpdateMessage(CostumeUpdateMessage msg, object tag)
@@ -2958,8 +3023,19 @@ namespace PacketCap
 
         public static void PrintGuildInfoMessage(GuildInfoMessage msg, object tag)
         {
+            Console.WriteLine("GuildInfoMessage:");
+            Console.WriteLine("\tGuildSN={0}", msg.GuildInfo.GuildSN); //System.Int32 has a toString()
+            Console.WriteLine("\tGuildName={0}", msg.GuildInfo.GuildName); //System.String has a toString()
+            Console.WriteLine("\tGuildLevel={0}", msg.GuildInfo.GuildLevel); //System.Int32 has a toString()
+            Console.WriteLine("\tMemberCount={0}", msg.GuildInfo.MemberCount); //System.Int32 has a toString()
+            Console.WriteLine("\tMasterName={0}", msg.GuildInfo.MasterName); //System.String has a toString()
+            Console.WriteLine("\tMaxMemberCount={0}", msg.GuildInfo.MaxMemberCount); //System.Int32 has a toString()
+            Console.WriteLine("\tIsNewbieRecommend={0}", msg.GuildInfo.IsNewbieRecommend); //System.Boolean has a toString()
+            Console.WriteLine("\tGuildPoint={0}", msg.GuildInfo.GuildPoint); //System.Int64 has a toString()
+            Console.WriteLine("\tGuildNotice={0}", msg.GuildInfo.GuildNotice); //System.String has a toString()
+            Console.WriteLine(DictToString<byte,int>(msg.GuildInfo.DailyGainGP,"DailyGainGP",1)); //System.Collections.Generic.Dictionary`2[System.Byte,System.Int32]
             //TODO: db connect
-            Console.WriteLine(msg.ToString());
+            
         }
 
         public static void PrintNotifyLook(NotifyLook msg, object tag)
@@ -2991,7 +3067,7 @@ namespace PacketCap
         public static void PrintSelectCharacterMessage(SelectCharacterMessage msg, object tag)
         {
             character = characters[msg.Index];
-            Console.WriteLine(msg.ToString());
+            Console.WriteLine("SelectCharacterMessage: index={0}",msg.Index);
         }
 
         private static string GameInfoToString(GameInfo g, string name, int numTabs) {
@@ -3390,7 +3466,10 @@ namespace PacketCap
 
         public static void PrintPropBrokenMessage(PropBrokenMessage msg, object tag)
         {
-            Console.WriteLine(msg.ToString());
+            Console.WriteLine("PropBrokenMessage:");
+            Console.WriteLine("\tBrokenProp={0}",msg.BrokenProp);
+            Console.WriteLine("\tEntityName={0}",msg.EntityName);
+            Console.WriteLine("\tAttacker={0}",msg.Attacker);
         }
 
         public static void PrintSectorPropListMessage(SectorPropListMessage msg, object tag)
@@ -3485,22 +3564,34 @@ namespace PacketCap
 
         public static void PrintQueryRecommendShipMessage(QueryRecommendShipMessage msg, object tag)
         {
-            Console.WriteLine(msg.ToString());
+            Console.WriteLine("QueryRecommendShipMessage:");
+            Console.WriteLine("\tQuestSet={0}",msg.Restriction.QuestSet);
+            Console.WriteLine("\tTargetQuestID={0}",msg.Restriction.TargetQuestID);
+            Console.WriteLine("\tDifficulty={0}",msg.Restriction.Difficulty);
+            Console.WriteLine("\tIsSeason2={0}",msg.Restriction.IsSeason2);
+            Console.WriteLine("\tSelectedBossQuestIDInfos=[{0}]",String.Join(",",msg.Restriction.SelectedBossQuestIDInfos));
         }
 
         public static void PrintEquipItemMessage(EquipItemMessage msg, object tag)
         {
-            Console.WriteLine(msg.ToString());
+            Console.WriteLine("EquipItemMessage:");
+            Console.WriteLine("\tItemID={0}",msg.ItemID);
+            Console.WriteLine("\tPartID={0}",msg.PartID);
         }
 
         public static void PrintEquipBundleMessage(EquipBundleMessage msg, object tag)
         {
-            Console.WriteLine(msg.ToString());
+            Console.WriteLine("EquipBundleMessage:");
+            Console.WriteLine("\tItemClass={0}",msg.ItemClass);
+            Console.WriteLine("\tQuickSlotID={0}",msg.QuickSlotID);
         }
 
         public static void PrintMoveInventoryItemMessage(MoveInventoryItemMessage msg, object tag)
         {
-            Console.WriteLine(msg.ToString());
+            Console.WriteLine("MoveInventoryItemMessage:");
+            Console.WriteLine("\tItemID={0}",msg.ItemID);
+            Console.WriteLine("\tStorage={0}",msg.Storage);
+            Console.WriteLine("\tTarget={0}",msg.Target);
         }
 
         private static BeautyShopCustomizeMessage lastBeautyShopMsg = null;
