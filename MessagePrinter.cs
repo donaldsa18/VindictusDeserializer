@@ -84,6 +84,9 @@ namespace PacketCap
         private void RegisterGeneric(MethodInfo m)
         {
             ParameterInfo[] paramList = m.GetParameters();
+            if (paramList.Length == 0) {
+                return;
+            }
             /*Console.Write("Registering {0}(", m.Name);
             foreach (ParameterInfo info in paramList)
             {
@@ -154,6 +157,10 @@ namespace PacketCap
             Console.WriteLine("\tProloguePlayed={0}", msg.ProloguePlayed);
             Console.WriteLine("\tPresetUsedCharacterCount={0}", msg.PresetUsedCharacterCount);
             Console.WriteLine("\tLoginPartyState=[{0}]", String.Join(",", msg.LoginPartyState));
+			if(msg.Characters == null || msg.Characters.Count == 0) {
+				return;
+			}
+
             int i = 0;
             characters = msg.Characters.ToList();
             foreach (CharacterSummary c in msg.Characters)
@@ -598,11 +605,11 @@ namespace PacketCap
         public static void PrintMailListMessage(MailListMessage msg, object tag)
         {
             Console.WriteLine("MailListMessage:");
-            if (msg.ReceivedMailList.Count != 0)
+            if (msg.ReceivedMailList != null && msg.ReceivedMailList.Count != 0)
             {
                 Console.WriteLine(ListToString<BriefMailInfo>(msg.ReceivedMailList, "ReceivedMailList", 1));
             }
-            if (msg.SentMailList.Count != 0)
+            if (msg.SentMailList != null && msg.SentMailList.Count != 0)
             {
                 Console.WriteLine(ListToString<BriefMailInfo>(msg.SentMailList, "SentMailList", 1));
             }
@@ -672,7 +679,7 @@ namespace PacketCap
         {
             Console.WriteLine("QuestProgressMessage:");
             Console.WriteLine(ListToString<QuestProgressInfo>(msg.QuestProgress, "QuestProgress", 1));
-            if (msg.AchievedGoals.Count != 0)
+            if (msg.AchievedGoals != null && msg.AchievedGoals.Count != 0)
             {
                 Console.WriteLine(ListToString<AchieveGoalInfo>(msg.AchievedGoals, "AchievedGoals", 1));
             }
@@ -775,11 +782,11 @@ namespace PacketCap
         {
             //TODO: fully parse
             Console.WriteLine("TitleListMessage:");
-            if (msg.AccountTitles.Count != 0)
+            if (msg.AccountTitles != null && msg.AccountTitles.Count != 0)
             {
                 Console.WriteLine(ListToString<TitleSlotInfo>(msg.AccountTitles, "AccountTitles", 1));
             }
-            if (msg.Titles.Count != 0)
+            if (msg.Titles != null && msg.Titles.Count != 0)
             {
                 Console.WriteLine(ListToString<TitleSlotInfo>(msg.Titles, "Titles", 1));
             }
@@ -803,15 +810,15 @@ namespace PacketCap
         public static void PrintManufactureInfoMessage(ManufactureInfoMessage msg, object tag)
         {
             Console.WriteLine("ManufactureInfoMessage:");
-            if (msg.ExpDictionary.Count != 0)
+            if (msg.ExpDictionary != null && msg.ExpDictionary.Count != 0)
             {
                 Console.WriteLine(DictToString<string, int>(msg.ExpDictionary, "ExpDictionary", 1));
             }
-            if (msg.GradeDictionary.Count != 0)
+            if (msg.GradeDictionary != null && msg.GradeDictionary.Count != 0)
             {
                 Console.WriteLine(DictToString<string, int>(msg.GradeDictionary, "GradeDictionary", 1));
             }
-            if (msg.Recipes.Count != 0)
+            if (msg.Recipes != null && msg.Recipes.Count != 0)
             {
                 Console.WriteLine(ListToString<string>(msg.Recipes, "Recipes", 1));
             }
@@ -1013,7 +1020,7 @@ namespace PacketCap
             Console.WriteLine("TradeItemClassListSearchMessage:");
             Console.WriteLine("\tuniqueNumber={0}", msg.uniqueNumber);
             Console.WriteLine("\tChunkPageNumber={0}", msg.ChunkPageNumber);
-            Console.WriteLine("\tOrder={0}", msg.Order.ToString());
+            Console.WriteLine("\tOrder={0}", msg.Order);
             Console.WriteLine("\tisDescending={0}", msg.isDescending);
             Console.WriteLine(ListToString<string>(msg.ItemClassList, "ItemClassList", 1));
             Console.WriteLine("\tDetailOptions:");
@@ -1041,7 +1048,7 @@ namespace PacketCap
             Console.WriteLine("\tmaxLevel={0}", msg.maxLevel);
             Console.WriteLine("\tuniqueNumber={0}", msg.uniqueNumber);
             Console.WriteLine("\tChunkPageNumber={0}", msg.ChunkPageNumber);
-            Console.WriteLine("\tOrder={0}", msg.Order.ToString());
+            Console.WriteLine("\tOrder={0}", msg.Order);
             Console.WriteLine("\tisDescending={0}", msg.isDescending);
             Console.WriteLine("\tDetailOptions:");
             foreach (DetailOption d in msg.DetailOptions)
@@ -1118,7 +1125,7 @@ namespace PacketCap
         {
             StringBuilder sb = new StringBuilder();
             sb.Append("SecuredOperationMessage: Operation=");
-            sb.Append(msg.Operation.ToString());
+            sb.Append(msg.Operation);
             sb.Append("LockedTime=");
             sb.Append(msg.LockedTimeInSeconds);
             Console.WriteLine(sb.ToString());
@@ -1148,7 +1155,7 @@ namespace PacketCap
         public static void PrintUpdateHistoryBookMessage(UpdateHistoryBookMessage msg, object tag)
         {
             Console.WriteLine("UpdateHistoryBookMessage:");
-            Console.WriteLine("\tType={0}", msg.Type.ToString());
+            Console.WriteLine("\tType={0}", msg.Type);
 
             String arr = msg.HistoryBooks != null ? String.Join(",", msg.HistoryBooks) : "";
             Console.WriteLine("\tHistoryBooks=[{0}]", arr);
@@ -1510,7 +1517,7 @@ namespace PacketCap
 
         public static void PrintEnterHousingMessage(EnterHousingMessage msg, object tag)
         {
-            Console.WriteLine("EnterHousingMessage: CharacterName={0} HousingIndex={1} EnterType={2} HousingPlayID={3}", msg.CharacterName, msg.HousingIndex, msg.EnterType.ToString(), msg.HousingPlayID);
+            Console.WriteLine("EnterHousingMessage: CharacterName={0} HousingIndex={1} EnterType={2} HousingPlayID={3}", msg.CharacterName, msg.HousingIndex, msg.EnterType, msg.HousingPlayID);
         }
         public static void PrintEndPendingDialogMessage(EndPendingDialogMessage msg, object tag)
         {
@@ -1795,7 +1802,7 @@ namespace PacketCap
 
         public static void PrintDecomposeItemResultMessage(DecomposeItemResultMessage msg, object tag)
         {
-            Console.WriteLine("DecomposeItemResultMessage: ResultEXP={0}", msg.ResultEXP.ToString());
+            Console.WriteLine("DecomposeItemResultMessage: ResultEXP={0}", msg.ResultEXP);
             Console.WriteLine(ListToString<string>(msg.GiveItemClassList, "GiveItemClassList", 1));
 
         }
@@ -2810,7 +2817,7 @@ namespace PacketCap
         public static void PrintSharedInventoryInfoMessage(SharedInventoryInfoMessage msg, object tag)
         {
             Console.WriteLine("SharedInventoryInfoMessage:");
-            if (msg.StorageInfos.Count != 0)
+            if (msg.StorageInfos != null && msg.StorageInfos.Count != 0)
             {
                 Console.WriteLine("\tStorageInfos:");
                 foreach (StorageInfo info in msg.StorageInfos)
@@ -2818,7 +2825,7 @@ namespace PacketCap
                     Console.WriteLine("\t\tstorageID={0} isAvailable={1} storageName={2} storageTag={3}", info.StorageID, info.IsAvailable, info.StorageName, info.StorageTag);
                 }
             }
-            if (msg.SlotInfos.Count != 0)
+            if (msg.SlotInfos != null && msg.SlotInfos.Count != 0)
             {
                 int i = 0;
                 foreach (SlotInfo info in msg.SlotInfos)
@@ -2830,7 +2837,10 @@ namespace PacketCap
 
         public static void PrintTirCoinInfoMessage(TirCoinInfoMessage msg, object tag)
         {
-            if (msg.TirCoinInfo.ContainsKey(1))
+			if(msg.TirCoinInfo == null || msg.TirCoinInfo.Count == 0) {
+				Console.WriteLine("TirCoinInfoMessage: []");
+			}
+            else if (msg.TirCoinInfo.ContainsKey(1))
             {
                 Console.WriteLine("TirCoinInfoMessage: Quantity={0}", msg.TirCoinInfo[1]);
             }
@@ -3024,18 +3034,20 @@ namespace PacketCap
         public static void PrintGuildInfoMessage(GuildInfoMessage msg, object tag)
         {
             Console.WriteLine("GuildInfoMessage:");
-            Console.WriteLine("\tGuildSN={0}", msg.GuildInfo.GuildSN); //System.Int32 has a toString()
-            Console.WriteLine("\tGuildName={0}", msg.GuildInfo.GuildName); //System.String has a toString()
-            Console.WriteLine("\tGuildLevel={0}", msg.GuildInfo.GuildLevel); //System.Int32 has a toString()
-            Console.WriteLine("\tMemberCount={0}", msg.GuildInfo.MemberCount); //System.Int32 has a toString()
-            Console.WriteLine("\tMasterName={0}", msg.GuildInfo.MasterName); //System.String has a toString()
-            Console.WriteLine("\tMaxMemberCount={0}", msg.GuildInfo.MaxMemberCount); //System.Int32 has a toString()
-            Console.WriteLine("\tIsNewbieRecommend={0}", msg.GuildInfo.IsNewbieRecommend); //System.Boolean has a toString()
-            Console.WriteLine("\tGuildPoint={0}", msg.GuildInfo.GuildPoint); //System.Int64 has a toString()
-            Console.WriteLine("\tGuildNotice={0}", msg.GuildInfo.GuildNotice); //System.String has a toString()
-            Console.WriteLine(DictToString<byte,int>(msg.GuildInfo.DailyGainGP,"DailyGainGP",1)); //System.Collections.Generic.Dictionary`2[System.Byte,System.Int32]
+            if (msg.GuildInfo != null) {
+                InGameGuildInfo g = msg.GuildInfo;
+                Console.WriteLine("\tGuildSN={0}", g.GuildSN); //System.Int32 has a toString()
+                Console.WriteLine("\tGuildName={0}", g.GuildName); //System.String has a toString()
+                Console.WriteLine("\tGuildLevel={0}", g.GuildLevel); //System.Int32 has a toString()
+                Console.WriteLine("\tMemberCount={0}", g.MemberCount); //System.Int32 has a toString()
+                Console.WriteLine("\tMasterName={0}", g.MasterName); //System.String has a toString()
+                Console.WriteLine("\tMaxMemberCount={0}", g.MaxMemberCount); //System.Int32 has a toString()
+                Console.WriteLine("\tIsNewbieRecommend={0}", g.IsNewbieRecommend); //System.Boolean has a toString()
+                Console.WriteLine("\tGuildPoint={0}", g.GuildPoint); //System.Int64 has a toString()
+                Console.WriteLine("\tGuildNotice={0}", g.GuildNotice); //System.String has a toString()
+                Console.WriteLine(DictToString<byte, int>(g.DailyGainGP, "DailyGainGP", 1)); //System.Collections.Generic.Dictionary`2[System.Byte,System.Int32]
+            }
             //TODO: db connect
-            
         }
 
         public static void PrintNotifyLook(NotifyLook msg, object tag)
@@ -3476,6 +3488,7 @@ namespace PacketCap
         {
             if (msg == null || msg.Props.Count == 0)
             {
+                Console.WriteLine("SectorPropListMessage: []");
                 return;
             }
             StringBuilder sb = new StringBuilder();
@@ -3565,11 +3578,15 @@ namespace PacketCap
         public static void PrintQueryRecommendShipMessage(QueryRecommendShipMessage msg, object tag)
         {
             Console.WriteLine("QueryRecommendShipMessage:");
-            Console.WriteLine("\tQuestSet={0}",msg.Restriction.QuestSet);
-            Console.WriteLine("\tTargetQuestID={0}",msg.Restriction.TargetQuestID);
-            Console.WriteLine("\tDifficulty={0}",msg.Restriction.Difficulty);
-            Console.WriteLine("\tIsSeason2={0}",msg.Restriction.IsSeason2);
-            Console.WriteLine("\tSelectedBossQuestIDInfos=[{0}]",String.Join(",",msg.Restriction.SelectedBossQuestIDInfos));
+            if (msg.Restriction == null) {
+                return;
+            }
+            RecommendShipRestriction r = msg.Restriction;
+            Console.WriteLine("\tQuestSet={0}",r.QuestSet);
+            Console.WriteLine("\tTargetQuestID={0}",r.TargetQuestID);
+            Console.WriteLine("\tDifficulty={0}",r.Difficulty);
+            Console.WriteLine("\tIsSeason2={0}",r.IsSeason2);
+            Console.WriteLine("\tSelectedBossQuestIDInfos=[{0}]",String.Join(",",r.SelectedBossQuestIDInfos));
         }
 
         public static void PrintEquipItemMessage(EquipItemMessage msg, object tag)
@@ -4330,7 +4347,11 @@ namespace PacketCap
         public static void PrintHackShieldRequestMessage(HackShieldRequestMessage msg, object tag)
         {
             Console.WriteLine("HackShieldRequestMessage:");
-            Console.WriteLine("\tRequest={0}",BitConverter.ToString(msg.Request.Array,msg.Request.Offset,msg.Request.Count)); //System.ArraySegment`1[System.Byte]
+            if (msg.Request == null) {
+                return;
+            }
+            ArraySegment<byte> r = msg.Request;
+            Console.WriteLine("\tRequest={0}",BitConverter.ToString(r.Array,r.Offset,r.Count)); //System.ArraySegment`1[System.Byte]
         }
 
         public static void PrintDeleteMailMessage(DeleteMailMessage msg, object tag)
