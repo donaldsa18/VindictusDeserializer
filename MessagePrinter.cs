@@ -32,6 +32,7 @@ using ServiceCore.PartyServiceOperations;
 using ServiceCore.ChannelServiceOperations;
 using ServiceCore.EndPointNetwork.CharacterList;
 using ServiceCore.EndPointNetwork.DS;
+using PacketCap.Database;
 
 namespace PacketCap
 {
@@ -41,6 +42,8 @@ namespace PacketCap
         private MessageHandlerFactory mf;
 
         private static BindingFlags bindingFlags = BindingFlags.Static | BindingFlags.Public;
+
+        
         public void RegisterPrinters(MessageHandlerFactory mf, Dictionary<int, Guid> getGuid)
         {
             //Console.WriteLine("registering printers");
@@ -895,6 +898,10 @@ namespace PacketCap
             ActionSync last = lastNotifyAction == null ? emptyActionSync : lastNotifyAction.Action;
             Console.WriteLine(ActionSyncToString(msg.Action, "Action", 1, last));
             lastNotifyAction = msg;
+            if (MongoDBConnect.connection != null) {
+                MongoDBConnect.connection.InsertNotifyAction(msg, channel, TownID);
+            }
+            
         }
 
         public static void PrintDisappeared(Disappeared msg, object tag)
@@ -1001,6 +1008,8 @@ namespace PacketCap
             Console.WriteLine("Identify: ID={0} Key={1}", msg.ID, msg.Key);
         }
 
+        public static int TownID = 0;
+
         public static void PrintHotSpringRequestInfoMessage(HotSpringRequestInfoMessage msg, object tag)
         {
             if (msg == null)
@@ -1008,6 +1017,7 @@ namespace PacketCap
                 return;
             }
             Console.WriteLine("HotSpringRequestInfoMessage: Channel={0} TownID={1}", msg.Channel, msg.TownID);
+            TownID = msg.TownID;
         }
 
         public static void PrintMovePartition(MovePartition msg, object tag)
@@ -2092,9 +2102,12 @@ namespace PacketCap
             Console.WriteLine(CharacterSummaryToString(msg.Info, "CharacterCommonInfoMessage", 0));
         }
 
+        public static long channel = 0;
+
         public static void PrintChannelServerAddress(ChannelServerAddress msg, object tag)
         {
             Console.WriteLine("ChannelServerAddress: ChannelID={0} Address={1} Port={2} Key={3}", msg.ChannelID, msg.Address, msg.Port, msg.Key);
+            channel = msg.ChannelID;
         }
 
         public static void PrintSystemMessage(SystemMessage msg, object tag)
@@ -2214,7 +2227,7 @@ namespace PacketCap
         {
             //TODO: db connect
             string s = CostumeInfoToString(msg.CostumeInfo, 0, character.CharacterID, "CostumeUpdateMessage");
-            if (s.Length == 0)
+            if (s == null || s.Length == 0)
             {
                 Console.WriteLine("CostumeUpdateMessage:");
             }
@@ -2441,7 +2454,7 @@ namespace PacketCap
             return DateTime.UtcNow.AddSeconds(closeDate);
         }
 
-        private static string DateTimeToString(DateTime d)
+        public static string DateTimeToString(DateTime d)
         {
             return d.ToString("yyyy-MM-dd hh:mm:ss.fff");
         }

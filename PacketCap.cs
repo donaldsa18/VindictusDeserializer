@@ -13,6 +13,7 @@ using PcapDotNet.Packets.Ethernet;
 using Utility;
 using System.Reflection;
 using ServiceCore.EndPointNetwork;
+using PacketCap.Database;
 
 namespace PacketCap
 {
@@ -122,6 +123,9 @@ namespace PacketCap
         {
             PacketDevice selectedDevice = GetDevice();
 
+            string mongoUri = Environment.GetEnvironmentVariable("MONGO_URI");
+            MongoDBConnect.SetupConnect(mongoUri);
+
             //Open the device with a 65kB buffer, promiscuous mode, 1s timeout
             using (PacketCommunicator communicator = selectedDevice.Open(65536, PacketDeviceOpenAttributes.Promiscuous, 1000))
             {
@@ -133,6 +137,8 @@ namespace PacketCap
                 communicator.ReceivePackets(0, HandlePacketPort);
             }
         }
+
+        
 
         private static void HandlePacketPort(PcapDotNet.Packets.Packet packet)
         {
@@ -218,13 +224,13 @@ namespace PacketCap
             }
             if (dataBytes == 6 || dataBytes == 0)
             {
-                Console.WriteLine("Ping from port {0}", srcPort);
+                //Console.WriteLine("Ping from port {0}", srcPort);
                 ClearBuffer();
                 return;
             }
 
-            String timestamp = packet.Timestamp.ToString("yyyy-MM-dd hh:mm:ss.fff");
-            Console.WriteLine("{0}: {1} bytes={2}", timestamp, connString, dataBytes);
+            //String timestamp = packet.Timestamp.ToString("yyyy-MM-dd hh:mm:ss.fff");
+            //Console.WriteLine("{0}: {1} bytes={2}", timestamp, connString, dataBytes);
 
             recvSize.AddLast(dataBytes);
             Buffer.BlockCopy(packet.Buffer, dataStart, buffer, bufLen, dataBytes);
