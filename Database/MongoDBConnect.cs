@@ -9,6 +9,7 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
+using PacketCap.Database.Char;
 
 namespace PacketCap.Database
 {
@@ -21,6 +22,8 @@ namespace PacketCap.Database
         private IMongoCollection<TradeItem> tradeCollection;
         private IMongoCollection<Character> charCollection;
         private IMongoCollection<Location> locCollection;
+        private IMongoCollection<CharacterCostume> costCollection;
+        private IMongoCollection<CharacterPet> petCollection;
 
         public MongoDBConnect()
         {
@@ -103,13 +106,19 @@ namespace PacketCap.Database
             if (infos == null || infos.Count == 0) {
                 return;
             }
-            List<TradeItem> items = new List<TradeItem>();
             foreach (TradeItemInfo info in infos)
             {
                 TradeItem ti = new TradeItem(info);
-                items.Add(ti);
+                try
+                {
+                    tradeCollection.InsertOneAsync(ti).GetAwaiter().GetResult();
+                }
+                catch (MongoWriteException ex)
+                {
+                    Console.WriteLine("Insert failed: {0}", ex.Message);
+                }
             }
-            tradeCollection.InsertManyAsync(items);
+            
         }
 
         public void InsertNotifyAction(NotifyAction a, long channel, int townID)
@@ -119,17 +128,32 @@ namespace PacketCap.Database
 
 
         public void InsertCharacterSummary(CharacterSummary c) {
+            Console.WriteLine("inserting character {0}",c.CharacterID);
             charCollection.InsertOneAsync(new Character(c));
+            costCollection.InsertOneAsync(new CharacterCostume(c.Costume,c.CharacterID));
+            if (c.Pet != null) {
+                petCollection.InsertOneAsync(new CharacterPet(c.Pet, c.CharacterID));
+            }
         }
 
         public void InsertCharacterSummaryList(ICollection<CharacterSummary> charList)
         {
-            List<Character> list = new List<Character>(charList.Count);
+            List<Character> chars = new List<Character>(charList.Count);
+            List<CharacterCostume> costumes = new List<CharacterCostume>(charList.Count);
+            List<CharacterPet> pets = new List<CharacterPet>(charList.Count);
 
             foreach (CharacterSummary s in charList) {
-                list.Add(new Character(s));
+                chars.Add(new Character(s));
+                costumes.Add(new CharacterCostume(s.Costume, s.CharacterID));
+                if (s.Pet != null) {
+                    pets.Add(new CharacterPet(s.Pet, s.CharacterID));
+                }
             }
-            charCollection.InsertManyAsync(list);
+            charCollection.InsertManyAsync(chars);
+            costCollection.InsertManyAsync(costumes);
+            if (pets.Count != 0) {
+                petCollection.InsertManyAsync(pets);
+            }
         }
 
         private void InitCollections()
@@ -145,18 +169,19 @@ namespace PacketCap.Database
             tradeCollection = db.GetCollection<TradeItem>("Trades");
             charCollection = db.GetCollection<Character>("Characters");
             locCollection = db.GetCollection<Location>("Locations");
+            costCollection = db.GetCollection<CharacterCostume>("Costumes");
+            petCollection = db.GetCollection<CharacterPet>("Pets");
 
-            var tradeBuilder = Builders<TradeItem>.IndexKeys;
-            var tradeIndexKeys = tradeBuilder.Ascending(x => x.TID);
+            var tradeIndexKeys = Builders<TradeItem>.IndexKeys.Ascending(x => x.TID);
             var uniqueIndex = new CreateIndexOptions<TradeItem> {
                 Unique = true
             };
             var indexModel = new CreateIndexModel<TradeItem>(tradeIndexKeys,uniqueIndex);
             var tradeIndex = tradeCollection.Indexes.CreateOneAsync(indexModel);
 
-            var locationBuilder = Builders<Location>.IndexKeys;
-            var locationIndexKeys = locationBuilder.Descending(x => x.Time);
-            var locationIndex = locCollection.Indexes.CreateOneAsync(locationIndexKeys);
+            var locationIndexKeys = Builders<Location>.IndexKeys.Descending(x => x.Time);
+            var locationIndexModel = new CreateIndexModel<Location>(locationIndexKeys);
+            var locationIndex = locCollection.Indexes.CreateOneAsync(locationIndexModel);
 
             tradeIndex.Wait();
             locationIndex.Wait();

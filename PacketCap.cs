@@ -315,6 +315,7 @@ namespace PacketCap
                 }
                 catch (InvalidOperationException e)
                 {
+                    Console.WriteLine(e);
                     String errMsg = e.Message;
                     String className = "";
                     int categoryId = p.CategoryId;
