@@ -165,14 +165,24 @@
     <Compile Include="Database\Location.cs" />
     <Compile Include="Database\MongoDBConnect.cs" />
     <Compile Include="Database\TradeItem.cs" />
+    <Compile Include="Database\Translation.cs" />
     <Compile Include="MessagePrinter.cs" />
     <Compile Include="PacketCap.cs" />
+    <Compile Include="Settings.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+      <DependentUpon>Settings.settings</DependentUpon>
+    </Compile>
     <Compile Include="SQLiteConnect.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
     <None Include="deserialize_TemporaryKey.pfx" />
     <None Include="packages.config" />
+    <None Include="Settings.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include="Microsoft.Net.Framework.3.5.SP1">

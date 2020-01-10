@@ -16,9 +16,11 @@ namespace PacketCap
         public static Dictionary<int, string> idToItemClass;
         public static Dictionary<int, string> idToQualityType;
         public static Dictionary<int, string> idToEnhanceType;
+        public static Dictionary<int, int> idToEnchantMaxLevel;
 
         public static Dictionary<int, Dictionary<string, double>> gemstoneStats;
         public static Dictionary<int, string> idToGemstone;
+        public static Dictionary<int, int> idToGemstoneRank;
 
         public static string[] StatList;
         public static SQLiteConnection conn;
@@ -45,6 +47,7 @@ namespace PacketCap
                 {"PVP_MATK","PVP MATT"},
                 {"PVP_DEF","PVP DEF"},
                 {"TOWN_SPEED","Movement Speed(Town)"},
+                {"ATK_LimitOver","Remove ATT limit"},
             };
             
         }
@@ -55,13 +58,43 @@ namespace PacketCap
             SQLiteCommand command = new SQLiteCommand(sql, conn);
             SQLiteDataReader reader = command.ExecuteReader();
             idToGemstone = new Dictionary<int, string>();
+            idToGemstoneRank = new Dictionary<int, int>();
             while (reader.Read()) {
                 Dictionary<string, double> stats = new Dictionary<string, double>();
                 LoadStats(reader, stats);
                 int id = int.Parse(reader["ID"].ToString());
                 gemstoneStats[id] = stats;
                 idToGemstone[id] = reader["ItemClass"].ToString();
+                idToGemstoneRank[id] = int.Parse(reader["Grade"].ToString());
             }
+        }
+
+        public static string EnchantNumToLevel(int enchant) {
+            switch (enchant) {
+                case 1:
+                    return "F";
+                case 2:
+                    return "E";
+                case 3:
+                    return "D";
+                case 4:
+                    return "C";
+                case 5:
+                    return "B";
+                case 6:
+                    return "A";
+                case 7:
+                    return "9";
+                case 8:
+                    return "8";
+                case 9:
+                    return "7";
+                case 10:
+                    return "6";
+                case 11:
+                    return "5";
+            }
+            return "-1";
         }
 
         private static void ReadCombineCraftPartsInfo() {
@@ -70,6 +103,7 @@ namespace PacketCap
             idToItemClass = new Dictionary<int, string>();
             idToEnhanceType = new Dictionary<int, string>();
             idToQualityType = new Dictionary<int, string>();
+            idToEnchantMaxLevel = new Dictionary<int, int>();
 
             string sql = "SELECT * FROM CombineCraftPartsInfo";
             SQLiteCommand command = new SQLiteCommand(sql, conn);
@@ -87,6 +121,11 @@ namespace PacketCap
                 classCombineStats[itemClass] = stats;
                 idToEnhanceType[id] = reader["EnhanceType"].ToString();
                 idToQualityType[id] = reader["QualityType"].ToString();
+                int.TryParse(reader["EnchantMaxLevel"].ToString(), out int enchantMaxLevel);
+                if (enchantMaxLevel == 0) {
+                    enchantMaxLevel = 100;
+                }
+                idToEnchantMaxLevel[id] = enchantMaxLevel;
             }
         }
 
@@ -111,6 +150,18 @@ namespace PacketCap
                 }
             }
         }
+
+        public static string GetIcon(string itemClass) {
+            string sql = "SELECT Icon FROM ItemClassInfo WHERE ItemClass = '" + itemClass + "' LIMIT 1";
+            SQLiteCommand command = new SQLiteCommand(sql, conn);
+            SQLiteDataReader reader = command.ExecuteReader();
+            while (reader.Read())
+            {
+                return reader["Icon"].ToString();
+            }
+            return "";
+        }
+
         public static string GetAbilityClass(int id) {
             string sql = "SELECT * FROM AbilityClassInfo WHERE ID=" + id.ToString();
             SQLiteCommand command = new SQLiteCommand(sql, conn);
@@ -159,6 +210,48 @@ namespace PacketCap
             }
         }
 
+        public static int GetMaxQuality(string qualityType) {
+            string sql = "SELECT DISTINCT Quality FROM QualityStatInfo WHERE ItemType = '"+qualityType+"' ORDER BY Quality DESC LIMIT 1";
+            SQLiteCommand command = new SQLiteCommand(sql, conn);
+            SQLiteDataReader reader = command.ExecuteReader();
+            while (reader.Read())
+            {
+                int quality = int.Parse(reader["Quality"].ToString());
+                if (quality == 1) {
+                    quality = 2;
+                }
+                return quality;
+            }
+            return -1;
+        }
+
+        public static void GetEnhanceQualityEnchant(string className, out string enhanceType, out string qualityType, out int enchantMaxLevel)
+        {
+            string sql = "SELECT EnhanceType,QualityType,EnchantMaxLevel FROM CombineCraftPartsInfo WHERE ItemClass = '" + className + "'";
+            SQLiteCommand command = new SQLiteCommand(sql, conn);
+            SQLiteDataReader reader = command.ExecuteReader();
+            enhanceType = "";
+            qualityType = "";
+            enchantMaxLevel = 0;
+            while (reader.Read())
+            {
+                enhanceType = reader["EnhanceType"].ToString();
+                qualityType = reader["QualityType"].ToString();
+                enchantMaxLevel = int.Parse(reader["EnchantMaxLevel"].ToString());
+            }
+        }
+
+        public static int GetMaxEnhance(string enhanceType) {
+            string sql = "SELECT EnhanceLevel FROM EnhanceInfo WHERE EnhanceType='"+enhanceType+"' ORDER BY EnhanceLevel DESC LIMIT 1";
+            SQLiteCommand command = new SQLiteCommand(sql, conn);
+            SQLiteDataReader reader = command.ExecuteReader();
+            while (reader.Read())
+            {
+                return int.Parse(reader["EnhanceLevel"].ToString());
+            }
+            return 0;
+        }
+
         public static bool getEquipItemStats(string itemClass, Dictionary<string, double> stats, out string qualityType, out string enhanceType) {
             string sql = "SELECT * FROM EquipItemInfo WHERE ItemClass='"+itemClass+"'";
             SQLiteCommand command = new SQLiteCommand(sql, conn);
@@ -176,7 +269,7 @@ namespace PacketCap
 
         public static void ApplyEnhanceStats(int enhance, string itemType, Dictionary<string, double> stats)
         {
-            string sql = "SELECT Stat,Value FROM EnhanceStatInfo WHERE EnhanceLevel = " + enhance.ToString() + " and EnhanceType='" + itemType + "'";
+            string sql = "SELECT Stat,Value,ValueType FROM EnhanceStatInfo WHERE EnhanceLevel = " + enhance.ToString() + " and EnhanceType='" + itemType + "'";
             SQLiteCommand command = new SQLiteCommand(sql, conn);
             SQLiteDataReader reader = command.ExecuteReader();
 
@@ -184,12 +277,23 @@ namespace PacketCap
             {
                 string stat = reader["Stat"].ToString();
                 double modifier = double.Parse(reader["Value"].ToString());
-                if (stats.TryGetValue(stat, out double val))
+                string valueType = reader["ValueType"].ToString();
+                if (valueType == "Multiply")
                 {
-                    stats[stat] = (val + modifier);
+                    if (stats.TryGetValue(stat, out double val))
+                    {
+                        stats[stat] = (val * (1 + modifier));
+                    }
                 }
                 else {
-                    stats[stat] = modifier;
+                    if (stats.TryGetValue(stat, out double val))
+                    {
+                        stats[stat] = (val + modifier);
+                    }
+                    else
+                    {
+                        stats[stat] = modifier;
+                    }
                 }
             }
         }
@@ -211,10 +315,11 @@ namespace PacketCap
         }
         public static string[] getStatsList() {
             Array statsArr = Enum.GetValues(typeof(Stats));
-            string[] statStrs = new string[statsArr.Length];
+            string[] statStrs = new string[statsArr.Length+1];
             for (int i = 0; i < statsArr.Length; i++) {
                 statStrs[i] = statsArr.GetValue(i).ToString();
             }
+            statStrs[statsArr.Length] = "ATK_LimitOver";
             return statStrs;
         }
         

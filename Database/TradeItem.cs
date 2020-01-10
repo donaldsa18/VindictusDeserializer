@@ -41,9 +41,10 @@ namespace PacketCap.Database
             Dictionary<string, double> calculatedStats = new Dictionary<string, double>();
             BsonDocument Stat = new BsonDocument();
             bool isEquip = SQLiteConnect.getEquipItemStats(itemClass, calculatedStats, out string qualityType, out string enhanceType);
+            int ability = -1;
             if (!isEquip) {
                 if (attribute.Contains("VARIABLESTAT")) {
-                    ApplyVariableStat(attribute, calculatedStats, itemClass);
+                    ApplyVariableStat(attribute, calculatedStats, itemClass, out ability);
                 }
             }
             else {
@@ -71,12 +72,26 @@ namespace PacketCap.Database
             }
             if (calculatedStats.Count != 0) {
                 SetStats(Stat, calculatedStats);
+                SetAbility(ability, Stat);
                 Attributes.Add("Stat", Stat);
+                string statStr = GetStatString(calculatedStats);
+                Attributes.Add("StatStr", statStr);
             }
             if (attribute.Contains("ANTIBIND")) {
                 SetAntiBind(attribute);
             }
         }
+
+        private void SetAbility(int ability, BsonDocument Stat) {
+            if (ability == -1)
+            {
+                return;
+            }
+            string abilityClass = SQLiteConnect.GetAbilityClass(ability);
+            string abilityDesc = MongoDBConnect.connection.GetAbilityString(abilityClass);
+            Stat.Add("Ability", abilityDesc);
+        }
+
         private void SetAntiBind(string attribute)
         {
             MatchCollection mc = Regex.Matches(attribute, @"ANTIBIND:([0-9]+)");
@@ -119,10 +134,33 @@ namespace PacketCap.Database
             Attributes.Add(type, doc);
         }
 
-        private void ApplyVariableStat(string attribute, Dictionary<string, double> calculatedStats,string itemClass) {
+        private static string GetStatString(Dictionary<string, double> calculatedStats) {
+            StringBuilder sb = new StringBuilder();
+            string[] stats = { "ATK","MATK", "PVP_ATK", "PVP_MATK", "Balance","Critical","ATK_Speed","ATK_Absolute","DEF", "PVP_DEF", "STR","DEX","INT","WILL","LUCK","HP","STAMINA","Res_Critical","TOWN_SPEED","ATK_LimitOver"};
+            foreach (string stat in stats) {
+                if (calculatedStats.TryGetValue(stat, out double val)) {
+                    string readableStat = stat;
+                    if (SQLiteConnect.statToReadableStat.ContainsKey(stat)) {
+                        readableStat = SQLiteConnect.statToReadableStat[stat];
+                    }
+                    int calculatedStat = (int)val;
+                    sb.Append(" ");
+                    sb.Append(readableStat);
+                    sb.Append(calculatedStat.ToString("+0;-#"));
+                }
+            }
+            if (sb.Length > 1) {
+                sb.Remove(0, 1);
+            }
+
+            return sb.ToString();
+        }
+
+        private void ApplyVariableStat(string attribute, Dictionary<string, double> calculatedStats,string itemClass, out int ability) {
             Console.WriteLine("Apply Variable Stat");
             CombineStats(calculatedStats, SQLiteConnect.classCombineStats[itemClass]);
             MatchCollection mc = Regex.Matches(attribute, @"VARIABLESTAT:([0-9;]+)");
+            ability = -1;
             foreach (Match m in mc)
             {
                 string statDiff = m.Groups[1].ToString();
@@ -133,18 +171,21 @@ namespace PacketCap.Database
             {
                 int.TryParse(m.Groups[1].ToString(), out int abilityClassID);
                 Console.WriteLine("Found an ability {0}",abilityClassID);
-                calculatedStats["Ability"] = (double)abilityClassID;
+                ability = abilityClassID;
             }
+            SQLiteConnect.GetEnhanceQualityEnchant(itemClass, out string enhanceType, out string qualityType, out int enchantMaxLevel);
+            SetMaxEnhanceString(enhanceType, qualityType, enchantMaxLevel);
         }
 
         private void ApplyCombination(string attribute, Dictionary<string, double> calculatedStats, out string qualityType, out string enhanceType) {
             Console.WriteLine("Apply Combination");
             string splitAttributes = attribute.Replace(",", "\n");
-            MatchCollection mc = Regex.Matches(splitAttributes, @"PS_([0-9]+):([0-9;]+)\(([0-9]+)\)");
+            MatchCollection mc = Regex.Matches(splitAttributes, @"PS_([0-9]+):([0-9;]+)\(([0-9]+)\)<?([0-9]*)>?");
             qualityType = "";
             enhanceType = "";
             BsonArray Composite = new BsonArray();
-            
+            int enchantMaxLevel = 100;
+            int rarity = 100;
             foreach (Match m in mc)
             {
                 string statDiff = m.Groups[2].ToString();
@@ -152,21 +193,52 @@ namespace PacketCap.Database
                 Dictionary<string, double> stats = new Dictionary<string, double>();
                 CombineStats(stats,SQLiteConnect.combineStats[combinePartID]);
                 ApplyStats(statDiff, stats);
-                AddComposite(stats, SQLiteConnect.idToItemClass[combinePartID],Composite);
+
+                int.TryParse(m.Groups[4].ToString(), out int abilityID);
+                string itemClass = SQLiteConnect.idToItemClass[combinePartID];
+                if (abilityID != 0)
+                {
+                    AddComposite(stats, itemClass, Composite, abilityID);
+                }
+                else
+                {
+                    AddComposite(stats, itemClass, Composite);
+                }
                 CombineStats(calculatedStats, stats);
-                qualityType = getLowerType(SQLiteConnect.idToQualityType[combinePartID], qualityType);
-                enhanceType = getLowerType(SQLiteConnect.idToEnhanceType[combinePartID], enhanceType);
+                int newEnchantLevel = SQLiteConnect.idToEnchantMaxLevel[combinePartID];
+                enchantMaxLevel = newEnchantLevel < enchantMaxLevel ? newEnchantLevel : enchantMaxLevel;
+                qualityType = GetLowerType(SQLiteConnect.idToQualityType[combinePartID], qualityType);
+                enhanceType = GetLowerType(SQLiteConnect.idToEnhanceType[combinePartID], enhanceType);
+                MatchCollection mc2 = Regex.Matches(itemClass, @"_([0-9])_");
+                foreach (Match m2 in mc2) {
+                    int newRarity = int.Parse(m2.Groups[1].ToString());
+                    rarity = newRarity < rarity ? newRarity : rarity;
+                }
             }
             Attributes.Add("Composite", Composite);
+            Attributes.Add("Rarity",rarity);
+            SetMaxEnhanceString(enhanceType, qualityType, enchantMaxLevel);
+        }
+
+        private void SetMaxEnhanceString(string enhanceType, string qualityType, int enchantMaxLevel) {
+            StringBuilder sb = new StringBuilder();
+            sb.Append("Max Enhance Level ");
+            sb.Append(SQLiteConnect.GetMaxEnhance(enhanceType));
+            sb.Append(", Max Quality ");
+            sb.Append(SQLiteConnect.GetMaxQuality(qualityType));
+            sb.Append(" Star, Max Enchant Rank ");
+            sb.Append(SQLiteConnect.EnchantNumToLevel(enchantMaxLevel));
+
+            Attributes.Add("MaxEnhance", sb.ToString());
         }
 
         private void ApplySpiritInjection(string attribute, Dictionary<string, double> calculatedStats) {
             Console.WriteLine("Apply Spirit Injection");
-            MatchCollection mc = Regex.Matches(attribute, @"SPIRIT_INJECTION:([^\(]+)\(([0-9]+)\)");
+            MatchCollection mc = Regex.Matches(attribute, @"SPIRIT_INJECTION:([^\(]+)\(([^)]+)\)");
             foreach (Match m in mc)
             {
                 string stat = m.Groups[1].ToString();
-                double modifier = double.Parse(m.Groups[2].ToString());
+                int modifier = int.Parse(m.Groups[2].ToString());
                 if (calculatedStats.TryGetValue(stat, out double val))
                 {
                     calculatedStats[stat] = val + modifier;
@@ -175,6 +247,11 @@ namespace PacketCap.Database
                 {
                     calculatedStats[stat] = modifier;
                 }
+                if (SQLiteConnect.statToReadableStat.ContainsKey(stat)) {
+                    stat = SQLiteConnect.statToReadableStat[stat];
+                }
+                string modifierStr = stat + modifier.ToString("+0;-#");
+                Attributes.Add("SpiritInjection", modifierStr);
             }
         }
 
@@ -183,6 +260,8 @@ namespace PacketCap.Database
             string splitAttributes = attribute.Replace(",", "\n");
             MatchCollection mc = Regex.Matches(splitAttributes, @"GS_(\d):([0-9;]+)\(([0-9]+)\)<([0-9]+)>");
             BsonArray Composite = new BsonArray();
+            Dictionary<string, Dictionary<string, double>> savedStats = new Dictionary<string, Dictionary<string, double>>();
+            int lowestRank = 5;
             foreach (Match m in mc)
             {
                 string statDiff = m.Groups[2].ToString();
@@ -190,9 +269,47 @@ namespace PacketCap.Database
                 Dictionary<string, double> stats = new Dictionary<string, double>();
                 CombineStats(stats,SQLiteConnect.gemstoneStats[gemstoneID]);
                 ApplyStats(statDiff, stats);
-                AddComposite(stats, SQLiteConnect.idToGemstone[gemstoneID],Composite);
+                string itemClass = SQLiteConnect.idToGemstone[gemstoneID];
+                savedStats[itemClass] = stats;
                 CombineStats(calculatedStats, stats);
+                int rank = SQLiteConnect.idToGemstoneRank[gemstoneID];
+                lowestRank = rank < lowestRank ? rank : lowestRank;
             }
+
+            MatchCollection mc2 = Regex.Matches(attribute, @"GEMSTONEINFO:([0-9;]+)");
+            string[] gemOrder = { "diamond", "sapphire", "ruby", "emerald" };
+            string[] gems = new string[4];
+            foreach (Match m in mc2) {
+                string[] gemIDs = m.Groups[1].ToString().Split(';');
+                for (int i = 0; i < gemIDs.Length; i+=2) {
+                    int gemRank = int.Parse(gemIDs[i]);
+                    string gem = gemOrder[gemRank];
+                    gems[gemRank] = gem;
+                }
+            }
+
+            foreach (string gem in gems) {
+                if (gem == null) {
+                    continue;
+                }
+                bool foundGem = false;
+                foreach (var entry in savedStats) {
+                    if (entry.Key.Contains(gem)) {
+                        AddComposite(entry.Value, entry.Key, Composite);
+                        foundGem = true;
+                        break;
+                    }
+                }
+                if (!foundGem) {
+                    BsonDocument compositeStat = new BsonDocument();
+                    string icon = string.Format("gemstone_{0}_rank{1}",gem,lowestRank);
+                    compositeStat.Add("Icon", icon);
+                    string message = string.Format("{0}{1}s will fit.", gem.First().ToString().ToUpper(), gem.Substring(1));
+                    compositeStat.Add("Message", message);
+                    Composite.Add(compositeStat);
+                }
+            }
+            
             Attributes.Add("Composite", Composite);
         }
 
@@ -211,28 +328,48 @@ namespace PacketCap.Database
             }
         }
 
+        private void AddComposite(Dictionary<string, double> stats, string itemClass, BsonArray Composite, int ability)
+        {
+            Console.WriteLine("Add Composite");
+            BsonDocument compositeStat = new BsonDocument();
+            SetStats(compositeStat, stats);
+            compositeStat.Add("ItemClass", itemClass);
+            string abilityClass = SQLiteConnect.GetAbilityClass(ability);
+            string abilityDesc = MongoDBConnect.connection.GetAbilityString(abilityClass);
+            string icon = SQLiteConnect.GetIcon(itemClass);
+            compositeStat.Add("Icon", icon);
+            compositeStat.Add("Ability", abilityDesc);
+            string statStr = GetStatString(stats);
+            compositeStat.Add("StatStr", statStr);
+            Composite.Add(compositeStat);
+        }
+
         private void AddComposite(Dictionary<string,double> stats,string itemClass,BsonArray Composite) {
             Console.WriteLine("Add Composite");
             BsonDocument compositeStat = new BsonDocument();
             SetStats(compositeStat, stats);
             compositeStat.Add("ItemClass", itemClass);
+            string icon = SQLiteConnect.GetIcon(itemClass);
+            compositeStat.Add("Icon", icon);
+            string statStr = GetStatString(stats);
+            compositeStat.Add("StatStr", statStr);
             Composite.Add(compositeStat);
         }
 
-        private static string getLowerType(string q1, string q2)
+        private static string GetLowerType(string q1, string q2)
         {
             if (q1 == q2)
             {
                 return q1;
             }
-            int q1Num = getTypeNum(q1);
-            int q2Num = getTypeNum(q2);
+            int q1Num = GetTypeNum(q1);
+            int q2Num = GetTypeNum(q2);
             if (q1Num < q2Num) {
                 return q1;
             }
             return q2;
         }
-        private static int getTypeNum(string type) {
+        private static int GetTypeNum(string type) {
             MatchCollection mc = Regex.Matches(type, @"_([0-9]+)$");
             foreach (Match m in mc)
             {

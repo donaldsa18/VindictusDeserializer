@@ -38,7 +38,7 @@ namespace PacketCap
 
         private static string myIp = "";
 
-        private static string filter = "host 192.168.0.200 and tcp portrange 27000-29000";
+        private static string filter = Settings.Default.filter;
 
         private string connString;
 
